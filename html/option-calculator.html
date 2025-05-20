@@ -1,0 +1,934 @@
+<!-- option-calculator.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantLib Option Calculator</title>
+    <style>
+        /* Similar styles as bond-calculator.html */
+        :root {
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --border-color: #e5e7eb;
+            --text-color: #333333;
+            --light-color: #f5f5f5;
+            --border-radius-md: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --success-color: #22c55e;
+            --success-light: #dcfce7;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #ffffff;
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: 16px;
+        }
+
+        .tool-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tool-link {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .tool-link:hover {
+            background-color: #e9f7fe;
+            text-decoration: none;
+        }
+
+        .tool-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .parameter-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -8px;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            padding: 0 8px;
+        }
+
+        .col-sm-12 {
+            flex: 0 0 100%;
+            padding: 0 8px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            background-color: #f9fafb;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #f3f4f6;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            padding: 10px;
+            background-color: var(--danger-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            padding: 10px;
+            background-color: var(--success-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loader {
+            border: 6px solid var(--light-color);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background-color: var(--light-color);
+            border: none;
+            cursor: pointer;
+            border-radius: 4px 4px 0 0;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 16px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th, .table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background-color: var(--light-color);
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>QuantLib Option Calculator</h1>
+
+    <div class="tool-nav">
+        <a href="index.html" class="tool-link">Home</a>
+        <a href="bond-calculator.html" class="tool-link">Bond Calculator</a>
+        <a href="option-calculator.html" class="tool-link active">Option Calculator</a>
+        <a href="swap-calculator.html" class="tool-link">Swap Calculator</a>
+        <a href="yield-curve-builder.html" class="tool-link">Yield Curve</a>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Option Type</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="optionType">Option Type</label>
+                    <select id="optionType" class="form-control">
+                        <option value="european-call">European Call</option>
+                        <option value="european-put">European Put</option>
+                        <option value="american-call">American Call</option>
+                        <option value="american-put">American Put</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="pricingModel">Pricing Model</label>
+                    <select id="pricingModel" class="form-control">
+                        <option value="black-scholes">Black-Scholes</option>
+                        <option value="binomial">Binomial Tree</option>
+                        <option value="monte-carlo">Monte Carlo</option>
+                        <option value="finite-difference">Finite Differences</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Option Parameters</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="spotPrice">Spot Price</label>
+                    <input type="number" id="spotPrice" class="form-control" value="100" min="0" step="0.01">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="strikePrice">Strike Price</label>
+                    <input type="number" id="strikePrice" class="form-control" value="100" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="riskFreeRate">Risk-Free Rate (%)</label>
+                    <input type="number" id="riskFreeRate" class="form-control" value="3.0" min="0" step="0.1">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="volatility">Volatility (%)</label>
+                    <input type="number" id="volatility" class="form-control" value="20.0" min="0.1" step="0.1">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="timeToMaturity">Time to Maturity (years)</label>
+                    <input type="number" id="timeToMaturity" class="form-control" value="1.0" min="0.01" step="0.01">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="dividendYield">Dividend Yield (%)</label>
+                    <input type="number" id="dividendYield" class="form-control" value="0.0" min="0" step="0.1">
+                </div>
+            </div>
+        </div>
+        <div id="modelSpecificParams" class="row">
+            <div class="col-md-6 col-sm-12" id="binomialStepsContainer" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="binomialSteps">Number of Steps</label>
+                    <input type="number" id="binomialSteps" class="form-control" value="100" min="10" step="10">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12" id="monteCarloSimsContainer" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="monteCarloSims">Number of Simulations</label>
+                    <input type="number" id="monteCarloSims" class="form-control" value="10000" min="1000" step="1000">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12" id="fdGridPointsContainer" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="fdGridPoints">Grid Points</label>
+                    <input type="number" id="fdGridPoints" class="form-control" value="100" min="10" step="10">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button id="calculateButton" class="btn btn-primary">Calculate Option</button>
+        <button id="resetButton" class="btn">Reset</button>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+    <div id="loader" class="loader"></div>
+
+    <div id="resultsSection" class="results-section">
+        <h2>Results</h2>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="valuationTab">Valuation</button>
+                <button class="tab-button" data-tab="greeksTab">Greeks</button>
+                <button class="tab-button" data-tab="sensitivitiesTab">Sensitivities</button>
+                <button class="tab-button" data-tab="chartsTab">Charts</button>
+            </div>
+
+            <div class="tab-content active" id="valuationTab">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="valuationTableBody">
+                    <!-- Results will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="greeksTab">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Greek</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="greeksTableBody">
+                    <!-- Greeks will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="sensitivitiesTab">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Change</th>
+                        <th>New Option Value</th>
+                        <th>Value Difference</th>
+                        <th>Percentage Change</th>
+                    </tr>
+                    </thead>
+                    <tbody id="sensitivitiesTableBody">
+                    <!-- Sensitivities will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="chartsTab">
+                <div class="chart-container">
+                    <canvas id="payoffChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="sensitivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Setup model-specific parameters visibility
+        document.getElementById('pricingModel').addEventListener('change', function() {
+            const model = this.value;
+
+            // Hide all model-specific containers
+            document.getElementById('binomialStepsContainer').style.display = 'none';
+            document.getElementById('monteCarloSimsContainer').style.display = 'none';
+            document.getElementById('fdGridPointsContainer').style.display = 'none';
+
+            // Show relevant container based on selected model
+            if (model === 'binomial') {
+                document.getElementById('binomialStepsContainer').style.display = 'block';
+            } else if (model === 'monte-carlo') {
+                document.getElementById('monteCarloSimsContainer').style.display = 'block';
+            } else if (model === 'finite-difference') {
+                document.getElementById('fdGridPointsContainer').style.display = 'block';
+            }
+        });
+
+        // Setup option type change handler
+        document.getElementById('optionType').addEventListener('change', function() {
+            const optionType = this.value;
+            const pricingModelSelect = document.getElementById('pricingModel');
+
+            // Enable/disable pricing models based on option type
+            if (optionType.startsWith('american')) {
+                // American options can't use Black-Scholes
+                for (let i = 0; i < pricingModelSelect.options.length; i++) {
+                    if (pricingModelSelect.options[i].value === 'black-scholes') {
+                        pricingModelSelect.options[i].disabled = true;
+                    }
+                }
+                if (pricingModelSelect.value === 'black-scholes') {
+                    pricingModelSelect.value = 'binomial';
+                    // Trigger change event to show appropriate parameters
+                    pricingModelSelect.dispatchEvent(new Event('change'));
+                }
+            } else {
+                // European options can use all models
+                for (let i = 0; i < pricingModelSelect.options.length; i++) {
+                    pricingModelSelect.options[i].disabled = false;
+                }
+            }
+        });
+
+        // Setup tab navigation
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Find parent tab container
+                const tabContainer = button.closest('.tab-container');
+
+                // Remove active class from all buttons and content in this container
+                tabContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                tabContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                // Add active class to selected button and content
+                button.classList.add('active');
+                tabContainer.querySelector(`#${button.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Setup calculate button
+        document.getElementById('calculateButton').addEventListener('click', calculateOption);
+
+        // Setup reset button
+        document.getElementById('resetButton').addEventListener('click', resetForm);
+
+        // Initialize model parameters visibility
+        document.getElementById('pricingModel').dispatchEvent(new Event('change'));
+    });
+
+    function calculateOption() {
+        // Hide any previous messages and show loader
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        // Get form values
+        const optionType = document.getElementById('optionType').value;
+        const pricingModel = document.getElementById('pricingModel').value;
+        const spotPrice = parseFloat(document.getElementById('spotPrice').value);
+        const strikePrice = parseFloat(document.getElementById('strikePrice').value);
+        const riskFreeRate = parseFloat(document.getElementById('riskFreeRate').value) / 100; // Convert to decimal
+        const volatility = parseFloat(document.getElementById('volatility').value) / 100; // Convert to decimal
+        const timeToMaturity = parseFloat(document.getElementById('timeToMaturity').value);
+        const dividendYield = parseFloat(document.getElementById('dividendYield').value) / 100; // Convert to decimal
+
+        // Get model-specific parameters
+        let binomialSteps = null;
+        let monteCarloSims = null;
+        let fdGridPoints = null;
+
+        if (pricingModel === 'binomial') {
+            binomialSteps = parseInt(document.getElementById('binomialSteps').value);
+        } else if (pricingModel === 'monte-carlo') {
+            monteCarloSims = parseInt(document.getElementById('monteCarloSims').value);
+        } else if (pricingModel === 'finite-difference') {
+            fdGridPoints = parseInt(document.getElementById('fdGridPoints').value);
+        }
+
+        // Validate inputs
+        if (isNaN(spotPrice) || spotPrice <= 0) {
+            showError('Spot price must be a positive number.');
+            return;
+        }
+
+        if (isNaN(strikePrice) || strikePrice <= 0) {
+            showError('Strike price must be a positive number.');
+            return;
+        }
+
+        if (isNaN(timeToMaturity) || timeToMaturity <= 0) {
+            showError('Time to maturity must be a positive number.');
+            return;
+        }
+
+        if (isNaN(volatility) || volatility <= 0) {
+            showError('Volatility must be a positive number.');
+            return;
+        }
+
+        // Create the request data
+        const requestData = {
+            optionType: optionType,
+            pricingModel: pricingModel,
+            spotPrice: spotPrice,
+            strikePrice: strikePrice,
+            riskFreeRate: riskFreeRate,
+            volatility: volatility,
+            timeToMaturity: timeToMaturity,
+            dividendYield: dividendYield
+        };
+
+        // Add model-specific parameters if applicable
+        if (binomialSteps !== null) {
+            requestData.binomialSteps = binomialSteps;
+        }
+        if (monteCarloSims !== null) {
+            requestData.monteCarloSims = monteCarloSims;
+        }
+        if (fdGridPoints !== null) {
+            requestData.fdGridPoints = fdGridPoints;
+        }
+
+        // Send the request to the API
+        fetch('/api/options/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server returned ${response.status}: ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loader
+                document.getElementById('loader').style.display = 'none';
+
+                // Process and display results
+                displayResults(data);
+
+                // Show success message
+                showSuccess('Option calculation completed successfully.');
+
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+
+                // Create charts
+                createPayoffChart(data);
+                createSensitivityChart(data);
+            })
+            .catch(error => {
+                console.error('API request failed:', error);
+                showError('Error: ' + error.message);
+            });
+    }
+
+    function displayResults(data) {
+        // Display valuation results
+        const valuationTableBody = document.getElementById('valuationTableBody');
+        valuationTableBody.innerHTML = '';
+
+        // Add option price
+        addResultRow(valuationTableBody, 'Option Price', formatCurrency(data.optionPrice), 'Theoretical price of the option');
+
+        // Add intrinsic value
+        addResultRow(valuationTableBody, 'Intrinsic Value', formatCurrency(data.intrinsicValue), 'Value if exercised immediately');
+
+        // Add time value
+        addResultRow(valuationTableBody, 'Time Value', formatCurrency(data.timeValue), 'Option premium beyond intrinsic value');
+
+        // Add probability ITM
+        addResultRow(valuationTableBody, 'Probability ITM', (data.probabilityITM * 100).toFixed(2) + '%', 'Probability of finishing in-the-money');
+
+        // Add break-even price
+        addResultRow(valuationTableBody, 'Break-Even Price', formatCurrency(data.breakEvenPrice), 'Underlying price where option position breaks even');
+
+        // Display Greeks
+        const greeksTableBody = document.getElementById('greeksTableBody');
+        greeksTableBody.innerHTML = '';
+
+        // Add Delta
+        addResultRow(greeksTableBody, 'Delta', data.greeks.delta.toFixed(4), 'Rate of change of option price with respect to underlying price');
+
+        // Add Gamma
+        addResultRow(greeksTableBody, 'Gamma', data.greeks.gamma.toFixed(4), 'Rate of change of delta with respect to underlying price');
+
+        // Add Theta
+        addResultRow(greeksTableBody, 'Theta', data.greeks.theta.toFixed(4), 'Rate of change of option price with respect to time');
+
+        // Add Vega
+        addResultRow(greeksTableBody, 'Vega', data.greeks.vega.toFixed(4), 'Rate of change of option price with respect to volatility');
+
+        // Add Rho
+        addResultRow(greeksTableBody, 'Rho', data.greeks.rho.toFixed(4), 'Rate of change of option price with respect to interest rate');
+
+        // Display sensitivities
+        displaySensitivities(data);
+    }
+
+    function displaySensitivities(data) {
+        const sensitivitiesTableBody = document.getElementById('sensitivitiesTableBody');
+        sensitivitiesTableBody.innerHTML = '';
+
+        // Add spot price sensitivities
+        for (const spotChange of data.sensitivities.spotPriceChanges) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>Spot Price</td>
+                <td>${spotChange.change > 0 ? '+' : ''}${(spotChange.change * 100).toFixed(2)}%</td>
+                <td>${formatCurrency(spotChange.optionPrice)}</td>
+                <td>${formatCurrency(spotChange.difference)}</td>
+                <td>${(spotChange.percentageChange * 100).toFixed(2)}%</td>
+            `;
+            sensitivitiesTableBody.appendChild(row);
+        }
+
+        // Add volatility sensitivities
+        for (const volChange of data.sensitivities.volatilityChanges) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>Volatility</td>
+                <td>${volChange.change > 0 ? '+' : ''}${(volChange.change * 100).toFixed(2)}%</td>
+                <td>${formatCurrency(volChange.optionPrice)}</td>
+                <td>${formatCurrency(volChange.difference)}</td>
+                <td>${(volChange.percentageChange * 100).toFixed(2)}%</td>
+            `;
+            sensitivitiesTableBody.appendChild(row);
+        }
+
+        // Add time to maturity sensitivities
+        for (const timeChange of data.sensitivities.timeChanges) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>Time to Maturity</td>
+                <td>${timeChange.change > 0 ? '+' : ''}${(timeChange.change * 365).toFixed(0)} days</td>
+                <td>${formatCurrency(timeChange.optionPrice)}</td>
+                <td>${formatCurrency(timeChange.difference)}</td>
+                <td>${(timeChange.percentageChange * 100).toFixed(2)}%</td>
+            `;
+            sensitivitiesTableBody.appendChild(row);
+        }
+    }
+
+    function createPayoffChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('payoffChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.payoffChart) {
+            window.payoffChart.destroy();
+        }
+
+        // Create the chart
+        window.payoffChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.payoffChart.spotPrices,
+                datasets: [{
+                    label: 'Option Payoff at Expiry',
+                    data: data.payoffChart.payoffs,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Current Option Value',
+                    data: data.payoffChart.currentValues,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Underlying Price'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Option Value'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Option Payoff Profile'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatCurrency(context.raw)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createSensitivityChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('sensitivityChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.sensitivityChart) {
+            window.sensitivityChart.destroy();
+        }
+
+        // Prepare datasets
+        const datasets = [];
+
+        // Spot price sensitivity
+        datasets.push({
+            label: 'Spot Price Sensitivity',
+            data: data.sensitivities.spotPriceChanges.map(item => ({
+                x: (1 + item.change) * data.parameters.spotPrice,
+                y: item.optionPrice
+            })),
+            borderColor: 'rgb(54, 162, 235)',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            tension: 0.1
+        });
+
+        // Volatility sensitivity
+        datasets.push({
+            label: 'Volatility Sensitivity',
+            data: data.sensitivities.volatilityChanges.map(item => ({
+                x: (1 + item.change) * data.parameters.volatility * 100, // Convert back to percentage
+                y: item.optionPrice
+            })),
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            tension: 0.1,
+            hidden: true // Hide by default
+        });
+
+        // Time sensitivity
+        datasets.push({
+            label: 'Time Sensitivity',
+            data: data.sensitivities.timeChanges.map(item => ({
+                x: (data.parameters.timeToMaturity - item.change) * 365, // Days remaining
+                y: item.optionPrice
+            })),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1,
+            hidden: true // Hide by default
+        });
+
+        // Create the chart
+        window.sensitivityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                        title: {
+                            display: true,
+                            text: 'Parameter Value'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Option Price'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Option Sensitivity Analysis'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatCurrency(context.raw.y)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function resetForm() {
+        // Reset to default values
+        document.getElementById('optionType').value = 'european-call';
+        document.getElementById('pricingModel').value = 'black-scholes';
+        document.getElementById('spotPrice').value = 100;
+        document.getElementById('strikePrice').value = 100;
+        document.getElementById('riskFreeRate').value = 3.0;
+        document.getElementById('volatility').value = 20.0;
+        document.getElementById('timeToMaturity').value = 1.0;
+        document.getElementById('dividendYield').value = 0.0;
+        document.getElementById('binomialSteps').value = 100;
+        document.getElementById('monteCarloSims').value = 10000;
+        document.getElementById('fdGridPoints').value = 100;
+
+        // Reset model-specific parameters visibility
+        document.getElementById('pricingModel').dispatchEvent(new Event('change'));
+
+        // Hide results and messages
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        const successElement = document.getElementById('successMessage');
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function addResultRow(tableBody, metric, value, description) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${metric}</strong></td>
+            <td>${value}</td>
+            <td>${description}</td>
+        `;
+        tableBody.appendChild(row);
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+</script>
+</body>
+</html>

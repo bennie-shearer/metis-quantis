@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantLib Yield Curve Builder</title>
+    <style>
+        /* Global and basic styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f7f9fc;
+            padding: 0 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin: 15px 0;
+            font-size: 22px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        /* Navigation */
+        .tool-nav {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            background-color: #f1f1f1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .tool-link {
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+            border-right: 1px solid #ddd;
+        }
+        
+        .tool-link:hover {
+            background-color: #e0e0e0;
+            color: #222;
+        }
+        
+        .tool-link.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        /* Form layout */
+        .parameter-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 10px;
+        }
+        
+        .col-sm-12, .col-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            padding: 0 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            font-size: 16px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+        }
+        
+        select.form-control {
+            cursor: pointer;
+        }
+        
+        /* Buttons */
+        .text-center {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: #212529;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
+            padding: 10px 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            border-radius: 5px;
+            margin: 0 5px;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .btn:hover {
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .btn-danger {
+            color: #fff;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        
+        /* Messages */
+        .error-message {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success-message {
+            display: none;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        /* Loader */
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Results Section */
+        .results-section {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-top: 25px;
+            margin-bottom: 30px;
+        }
+        
+        /* Tab Navigation */
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #777;
+            font-weight: 500;
+            transition: color 0.2s, border-bottom 0.2s;
+            margin-right: 10px;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button:hover {
+            color: #333;
+        }
+        
+        .tab-button.active {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Tables */
+        .table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        /* Chart Container */
+        .chart-container {
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+        }
+        
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%;
+            max-width: 500px;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        
+        .close:hover {
+            color: #333;
+        }
+
+        .card {
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        
+        .card-body {
+            padding: 15px;
+        }
+        
+        .card-title {
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .mt-2 {
+            margin-top: 10px;
+        }
+        
+        .mt-4 {
+            margin-top: 20px;
+        }
+        
+        .mb-4 {
+            margin-bottom: 20px;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .tool-link {
+                flex: 1 0 auto;
+                text-align: center;
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+            
+            .modal-content {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>QuantLib Yield Curve Builder</h1>
+
+    <div class="tool-nav">
+        <a href="index.html" class="tool-link">Home</a>
+        <a href="bond-calculator.html" class="tool-link">Bond Calculator</a>
+        <a href="option-calculator.html" class="tool-link">Option Calculator</a>
+        <a href="swap-calculator.html" class="tool-link">Swap Calculator</a>
+        <a href="yield-curve-builder.html" class="tool-link active">Yield Curve</a>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Yield Curve Method</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="curveMethod">Curve Building Method</label>
+                    <select id="curveMethod" class="form-control">
+                        <option value="bootstrap">Bootstrap from Market Instruments</option>
+                        <option value="nelson-siegel">Nelson-Siegel Parametric Model</option>
+                        <option value="svensson">Svensson Parametric Model</option>
+                        <option value="cubic-spline">Cubic Spline Interpolation</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="interpolationMethod">Interpolation Method</label>
+                    <select id="interpolationMethod" class="form-control">
+                        <option value="linear">Linear</option>
+                        <option value="log-linear">Log-Linear</option>
+                        <option value="cubic">Cubic</option>
+                        <option value="monotonic-cubic">Monotonic Cubic</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="referenceDate">Reference Date</label>
+                    <input type="date" id="referenceDate" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="dayCount">Day Count Convention</label>
+                    <select id="dayCount" class="form-control">
+                        <option value="actual/365">Actual/365</option>
+                        <option value="actual/360">Actual/360</option>
+                        <option value="30/360">30/360</option>
+                        <option value="actual/actual">Actual/Actual</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="bootstrapParamsSection" class="parameter-section">
+        <h2>Market Instruments</h2>
+        <div class="row">
+            <div class="col-12">
+                <div class="form-group">
+                    <label class="form-label" for="instrumentsTable">Market Instruments</label>
+                    <div class="table-wrapper">
+                        <table class="table" id="instrumentsTable">
+                            <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Maturity/Tenor</th>
+                                <th>Rate (%)</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody id="instrumentsTableBody">
+                            <!-- Rows will be added by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <button id="addInstrumentButton" class="btn btn-primary">Add Instrument</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="parametricParamsSection" class="parameter-section" style="display: none;">
+        <h2>Parametric Model</h2>
+        <div id="nelsonSiegelParams">
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="beta0">β₀ (Long-term level)</label>
+                        <input type="number" id="beta0" class="form-control" value="0.05" min="0" step="0.001">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="beta1">β₁ (Short-term component)</label>
+                        <input type="number" id="beta1" class="form-control" value="0.02" step="0.001">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="beta2">β₂ (Medium-term component)</label>
+                        <input type="number" id="beta2" class="form-control" value="-0.01" step="0.001">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="tau">τ (Decay factor)</label>
+                        <input type="number" id="tau" class="form-control" value="2.0" min="0.1" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="svenssonParams" style="display: none;">
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="beta3">β₃ (Second hump component)</label>
+                        <input type="number" id="beta3" class="form-control" value="0.01" step="0.001">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="tau2">τ₂ (Second decay factor)</label>
+                        <input type="number" id="tau2" class="form-control" value="5.0" min="0.1" step="0.1">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button id="calculateButton" class="btn btn-primary">Build Yield Curve</button>
+        <button id="resetButton" class="btn">Reset</button>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+    <div id="loader" class="loader"></div>
+
+    <div id="resultsSection" class="results-section">
+        <h2>Results</h2>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="yieldCurve">Yield Curve</button>
+                <button class="tab-button" data-tab="discountFactors">Discount Factors</button>
+                <button class="tab-button" data-tab="forwardRates">Forward Rates</button>
+                <button class="tab-button" data-tab="parRates">Par Rates</button>
+            </div>
+
+            <div class="tab-content active" id="yieldCurve">
+                <div class="chart-container">
+                    <canvas id="yieldCurveChart"></canvas>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-6 col-sm-12 mb-4">
+                        <div class="form-group">
+                            <label class="form-label">Tenor Input</label>
+                            <div class="row">
+                                <div class="col-8">
+                                    <input type="text" id="tenorInput" class="form-control" placeholder="e.g., 1Y, 5Y, 10Y">
+                                </div>
+                                <div class="col-4">
+                                    <button id="calculateRateButton" class="btn btn-primary">Get Rate</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tenorResult" class="mt-2" style="display: none;">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Tenor: <span id="tenorValue"></span></h5>
+                                    <p class="card-text">Zero Rate: <span id="zeroRateValue"></span></p>
+                                    <p class="card-text">Discount Factor: <span id="dfValue"></span></p>
+                                    <p class="card-text">Forward Rate (1Y): <span id="forwardRateValue"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="discountFactors">
+                <div class="chart-container">
+                    <canvas id="discountFactorChart"></canvas>
+                </div>
+                <div class="table-wrapper mt-4">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Tenor</th>
+                            <th>Date</th>
+                            <th>Discount Factor</th>
+                        </tr>
+                        </thead>
+                        <tbody id="discountFactorsTableBody">
+                        <!-- Discount factors will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content" id="forwardRates">
+                <div class="chart-container">
+                    <canvas id="forwardRateChart"></canvas>
+                </div>
+                <div class="table-wrapper mt-4">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Start Tenor</th>
+                            <th>End Tenor</th>
+                            <th>Forward Rate (%)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="forwardRatesTableBody">
+                        <!-- Forward rates will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content" id="parRates">
+                <div class="chart-container">
+                    <canvas id="parRateChart"></canvas>
+                </div>
+                <div class="table-wrapper mt-4">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Tenor</th>
+                            <th>Par Rate (%)</th>
+                        </tr>
+                        </thead>
+                        <tbody id="parRatesTableBody">
+                        <!-- Par rates will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Instrument Modal -->
+    <div id="addInstrumentModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Add Market Instrument</h2>
+            <div class="form-group">
+                <label class="form-label" for="instrumentType">Instrument Type</label>
+                <select id="instrumentType" class="form-control">
+                    <option value="deposit">Deposit</option>
+                    <option value="fra">Forward Rate Agreement (FRA)</option>
+                    <option value="futures">Interest Rate Futures</option>
+                    <option value="swap">Interest Rate Swap</option>
+                    <option value="bond">Government Bond</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="instrumentTenor">Maturity/Tenor</label>
+                <input type="text" id="instrumentTenor" class="form-control" placeholder="e.g., 3M, 2Y">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="instrumentRate">Rate (%)</label>
+                <input type="number" id="instrumentRate" class="form-control" step="0.001" min="0">
+            </div>
+            <div class="text-center">
+                <button id="saveInstrumentButton" class="btn btn-primary">Add Instrument</button>
+                <button id="cancelInstrumentButton" class="btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load Chart.js and other dependencies asynchronously
+    function loadScript(url, callback) {
+        var script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = url;
+        script.onload = callback;
+        document.head.appendChild(script);
+    }
+
+    // Initialize everything once the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load Chart.js before initializing the app
+        loadScript('https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js', function() {
+            console.log('Chart.js loaded successfully');
+            initializeApp();
+        });
+    });
+
+    function initializeApp() {
+        // Set default dates
+        const today = new Date();
+        document.getElementById('referenceDate').valueAsDate = today;
+
+        // Setup tab navigation
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const tabContainer = this.closest('.tab-container');
+                
+                // Remove active class from all buttons and content
+                tabContainer.querySelectorAll('.tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                tabContainer.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Add active class to current button and content
+                this.classList.add('active');
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Setup curve method change handler
+        document.getElementById('curveMethod').addEventListener('change', function() {
+            const method = this.value;
+
+            if (method === 'bootstrap') {
+                document.getElementById('bootstrapParamsSection').style.display = 'block';
+                document.getElementById('parametricParamsSection').style.display = 'none';
+            } else {
+                document.getElementById('bootstrapParamsSection').style.display = 'none';
+                document.getElementById('parametricParamsSection').style.display = 'block';
+
+                // Show/hide Svensson-specific parameters
+                if (method === 'svensson') {
+                    document.getElementById('svenssonParams').style.display = 'block';
+                } else {
+                    document.getElementById('svenssonParams').style.display = 'none';
+                }
+            }
+        });
+
+        // Setup calculate button
+        document.getElementById('calculateButton').addEventListener('click', buildYieldCurve);
+
+        // Setup reset button
+        document.getElementById('resetButton').addEventListener('click', resetForm);
+
+        // Setup tenor calculation button
+        document.getElementById('calculateRateButton').addEventListener('click', calculateRateForTenor);
+
+        // Setup add instrument button
+        document.getElementById('addInstrumentButton').addEventListener('click', showAddInstrumentModal);
+
+        // Setup modal close button
+        document.querySelector('.close').addEventListener('click', hideAddInstrumentModal);
+
+        // Setup save instrument button
+        document.getElementById('saveInstrumentButton').addEventListener('click', addInstrument);
+
+        // Setup cancel instrument button
+        document.getElementById('cancelInstrumentButton').addEventListener('click', hideAddInstrumentModal);
+
+        // Initialize the instruments table with some default instruments
+        initializeInstrumentsTable();
+
+        // Trigger initial change events to set up the form correctly
+        document.getElementById('curveMethod').dispatchEvent(new Event('change'));
+    }
+
+    // Store instruments for the bootstrap method
+    const instruments = [];
+
+    function initializeInstrumentsTable() {
+        // Add some default instruments
+        addInstrumentToTable('deposit', '3M', 4.25);
+        addInstrumentToTable('deposit', '6M', 4.35);
+        addInstrumentToTable('futures', '1Y', 4.50);
+        addInstrumentToTable('swap', '2Y', 4.60);
+        addInstrumentToTable('swap', '5Y', 4.75);
+        addInstrumentToTable('swap', '10Y', 4.85);
+        addInstrumentToTable('swap', '30Y', 4.90);
+
+        // Store these instruments
+        instruments.push(
+            { type: 'deposit', tenor: '3M', rate: 4.25 },
+            { type: 'deposit', tenor: '6M', rate: 4.35 },
+            { type: 'futures', tenor: '1Y', rate: 4.50 },
+            { type: 'swap', tenor: '2Y', rate: 4.60 },
+            { type: 'swap', tenor: '5Y', rate: 4.75 },
+            { type: 'swap', tenor: '10Y', rate: 4.85 },
+            { type: 'swap', tenor: '30Y', rate: 4.90 }
+        );
+    }
+
+    function addInstrumentToTable(type, tenor, rate) {
+        const tableBody = document.getElementById('instrumentsTableBody');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${type.charAt(0).toUpperCase() + type.slice(1)}</td>
+            <td>${tenor}</td>
+            <td>${rate.toFixed(3)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger remove-instrument">Remove</button>
+            </td>
+        `;
+        tableBody.appendChild(row);
+
+        // Add event listener to remove button
+        row.querySelector('.remove-instrument').addEventListener('click', function() {
+            // Remove from table
+            tableBody.removeChild(row);
+
+            // Remove from instruments array
+            const index = instruments.findIndex(instr =>
+                instr.type === type && instr.tenor === tenor && instr.rate === rate);
+            if (index !== -1) {
+                instruments.splice(index, 1);
+            }
+        });
+    }
+
+    function showAddInstrumentModal() {
+        document.getElementById('addInstrumentModal').style.display = 'block';
+    }
+
+    function hideAddInstrumentModal() {
+        document.getElementById('addInstrumentModal').style.display = 'none';
+
+        // Reset modal fields
+        document.getElementById('instrumentType').value = 'deposit';
+        document.getElementById('instrumentTenor').value = '';
+        document.getElementById('instrumentRate').value = '';
+    }
+
+    function addInstrument() {
+        const type = document.getElementById('instrumentType').value;
+        const tenor = document.getElementById('instrumentTenor').value;
+        const rate = parseFloat(document.getElementById('instrumentRate').value);
+
+        // Validate inputs
+        if (!tenor) {
+            alert('Please enter a valid tenor.');
+            return;
+        }
+
+        if (isNaN(rate) || rate < 0) {
+            alert('Please enter a valid rate.');
+            return;
+        }
+
+        // Add to table and instruments array
+        addInstrumentToTable(type, tenor, rate);
+        instruments.push({ type, tenor, rate });
+
+        // Hide modal
+        hideAddInstrumentModal();
+    }
+
+    function buildYieldCurve() {
+        // Hide any previous messages and show loader
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        // Get form values
+        const curveMethod = document.getElementById('curveMethod').value;
+        const interpolationMethod = document.getElementById('interpolationMethod').value;
+        const referenceDate = document.getElementById('referenceDate').value;
+        const dayCount = document.getElementById('dayCount').value;
+
+        // Create request data based on curve method
+        let requestData = {
+            curveMethod: curveMethod,
+            interpolationMethod: interpolationMethod,
+            referenceDate: referenceDate,
+            dayCount: dayCount
+        };
+
+        if (curveMethod === 'bootstrap') {
+            requestData.instruments = instruments;
+        } else {
+            // Parametric model parameters
+            requestData.parameters = {
+                beta0: parseFloat(document.getElementById('beta0').value),
+                beta1: parseFloat(document.getElementById('beta1').value),
+                beta2: parseFloat(document.getElementById('beta2').value),
+                tau: parseFloat(document.getElementById('tau').value)
+            };
+
+            if (curveMethod === 'svensson') {
+                requestData.parameters.beta3 = parseFloat(document.getElementById('beta3').value);
+                requestData.parameters.tau2 = parseFloat(document.getElementById('tau2').value);
+            }
+        }
+
+        // In this mock implementation, we'll simulate a server response
+        setTimeout(() => {
+            // Hide loader
+            document.getElementById('loader').style.display = 'none';
+            
+            // Generate mock response data
+            const mockResponse = generateMockResponse(requestData);
+            
+            // Display results
+            displayResults(mockResponse);
+            
+            // Show success message
+            showSuccess('Yield curve built successfully.');
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+            
+            // Store curve data for later use
+            window.curveData = mockResponse;
+        }, 1000);
+    }
+
+    function generateMockResponse(requestData) {
+        // Generate tenors from 1M to 30Y
+        const tenors = [
+            '1M', '2M', '3M', '6M', '9M', '1Y', '18M', '2Y', '3Y', '4Y', '5Y',
+            '6Y', '7Y', '8Y', '9Y', '10Y', '12Y', '15Y', '20Y', '25Y', '30Y'
+        ];
+        
+        // Generate dates from reference date
+        const dates = tenors.map(tenor => {
+            const refDate = new Date(requestData.referenceDate);
+            const match = tenor.match(/(\d+)([MY])/);
+            if (match) {
+                const amount = parseInt(match[1]);
+                const unit = match[2];
+                
+                if (unit === 'M') {
+                    refDate.setMonth(refDate.getMonth() + amount);
+                } else if (unit === 'Y') {
+                    refDate.setFullYear(refDate.getFullYear() + amount);
+                }
+            }
+            return refDate.toISOString().split('T')[0];
+        });
+        
+        // Generate curve points based on method
+        let curvePoints = [];
+        
+        if (requestData.curveMethod === 'bootstrap') {
+            // For bootstrap, we need to use the input instruments to create a realistic curve
+            const sortedInstruments = [...requestData.instruments].sort((a, b) => {
+                // Sort by tenor (convert to months for comparison)
+                const getTenorMonths = (tenor) => {
+                    const match = tenor.match(/(\d+)([MY])/);
+                    if (match) {
+                        const amount = parseInt(match[1]);
+                        const unit = match[2];
+                        return unit === 'M' ? amount : amount * 12;
+                    }
+                    return 0;
+                };
+                
+                return getTenorMonths(a.tenor) - getTenorMonths(b.tenor);
+            });
+            
+            // Create a map of tenors to rates from the instruments
+            const rateMap = {};
+            sortedInstruments.forEach(instr => {
+                rateMap[instr.tenor] = instr.rate / 100; // Convert to decimal
+            });
+            
+            // Create curve points using a simple interpolation approach
+            for (let i = 0; i < tenors.length; i++) {
+                const tenor = tenors[i];
+                let rate;
+                
+                if (rateMap[tenor]) {
+                    // Use exact match from instruments
+                    rate = rateMap[tenor];
+                } else {
+                    // Interpolate between instruments
+                    // Simple linear interpolation for mock
+                    const tenorMonths = tenor.match(/(\d+)([MY])/).map(m => {
+                        return m[2] === 'M' ? parseInt(m[1]) : parseInt(m[1]) * 12;
+                    })[0];
+                    
+                    // Find nearest lower and higher matches
+                    let lowerTenor = null;
+                    let higherTenor = null;
+                    
+                    for (const t of Object.keys(rateMap)) {
+                        const tMonths = t.match(/(\d+)([MY])/).map(m => {
+                            return m[2] === 'M' ? parseInt(m[1]) : parseInt(m[1]) * 12;
+                        })[0];
+                        
+                        if (tMonths <= tenorMonths && (!lowerTenor || tMonths > lowerTenor.months)) {
+                            lowerTenor = { tenor: t, months: tMonths, rate: rateMap[t] };
+                        }
+                        
+                        if (tMonths >= tenorMonths && (!higherTenor || tMonths < higherTenor.months)) {
+                            higherTenor = { tenor: t, months: tMonths, rate: rateMap[t] };
+                        }
+                    }
+                    
+                    if (lowerTenor && higherTenor) {
+                        // Interpolate
+                        const ratio = (tenorMonths - lowerTenor.months) / (higherTenor.months - lowerTenor.months);
+                        rate = lowerTenor.rate + ratio * (higherTenor.rate - lowerTenor.rate);
+                    } else if (lowerTenor) {
+                        // Extrapolate using last two points
+                        rate = lowerTenor.rate;
+                    } else if (higherTenor) {
+                        // Extrapolate using first two points
+                        rate = higherTenor.rate;
+                    } else {
+                        // Fallback
+                        rate = 0.05;
+                    }
+                }
+                
+                // Add noise for more realistic curve
+                rate = rate * (0.98 + Math.random() * 0.04);
+                
+                // Calculate discount factor
+                const tenorMonths = tenor.match(/(\d+)([MY])/).map(m => {
+                    return m[2] === 'M' ? parseInt(m[1]) / 12 : parseInt(m[1]);
+                })[0];
+                
+                const discountFactor = Math.exp(-rate * tenorMonths);
+                
+                curvePoints.push({
+                    tenor: tenor,
+                    tenorLabel: tenor,
+                    date: dates[i],
+                    zeroRate: rate,
+                    discountFactor: discountFactor
+                });
+            }
+        } else if (requestData.curveMethod === 'nelson-siegel' || requestData.curveMethod === 'svensson') {
+            // Use Nelson-Siegel or Svensson formula to generate rates
+            const { beta0, beta1, beta2, tau } = requestData.parameters;
+            let beta3 = 0;
+            let tau2 = 1;
+            
+            if (requestData.curveMethod === 'svensson') {
+                beta3 = requestData.parameters.beta3;
+                tau2 = requestData.parameters.tau2;
+            }
+            
+            for (let i = 0; i < tenors.length; i++) {
+                const tenor = tenors[i];
+                const tenorMatch = tenor.match(/(\d+)([MY])/);
+                const amount = parseInt(tenorMatch[1]);
+                const unit = tenorMatch[2];
+                
+                // Convert tenor to years
+                const t = unit === 'M' ? amount / 12 : amount;
+                
+                // Nelson-Siegel formula
+                let rate = beta0;
+                const expTerm = Math.exp(-t / tau);
+                rate += beta1 * ((1 - expTerm) / (t / tau));
+                rate += beta2 * ((1 - expTerm) / (t / tau) - expTerm);
+                
+                // Add Svensson extension if needed
+                if (requestData.curveMethod === 'svensson') {
+                    const expTerm2 = Math.exp(-t / tau2);
+                    rate += beta3 * ((1 - expTerm2) / (t / tau2) - expTerm2);
+                }
+                
+                // Add small noise for realism
+                rate = rate * (0.98 + Math.random() * 0.04);
+                
+                // Ensure positive rate
+                rate = Math.max(0.001, rate);
+                
+                // Calculate discount factor
+                const discountFactor = Math.exp(-rate * t);
+                
+                curvePoints.push({
+                    tenor: tenor,
+                    tenorLabel: tenor,
+                    date: dates[i],
+                    zeroRate: rate,
+                    discountFactor: discountFactor
+                });
+            }
+        } else if (requestData.curveMethod === 'cubic-spline') {
+            // For cubic spline, we'll use a simplified approach for the mock
+            // In a real implementation, this would use actual cubic spline interpolation
+            
+            // Generate a base curve
+            for (let i = 0; i < tenors.length; i++) {
+                const tenor = tenors[i];
+                const tenorMatch = tenor.match(/(\d+)([MY])/);
+                const amount = parseInt(tenorMatch[1]);
+                const unit = tenorMatch[2];
+                
+                // Convert tenor to years
+                const t = unit === 'M' ? amount / 12 : amount;
+                
+                // Create a curve shape
+                let rate = 0.03 + 0.02 * (1 - Math.exp(-t / 3));
+                
+                // Add noise (higher at longer tenors)
+                rate = rate * (0.98 + 0.04 * Math.random());
+                
+                // Calculate discount factor
+                const discountFactor = Math.exp(-rate * t);
+                
+                curvePoints.push({
+                    tenor: tenor,
+                    tenorLabel: tenor,
+                    date: dates[i],
+                    zeroRate: rate,
+                    discountFactor: discountFactor
+                });
+            }
+        }
+        
+        // Generate forward rates
+        const forwardRates = [];
+        for (let i = 0; i < curvePoints.length - 1; i++) {
+            const startPoint = curvePoints[i];
+            const endPoint = curvePoints[i + 1];
+            
+            // Convert tenors to years
+            const startTenorMatch = startPoint.tenor.match(/(\d+)([MY])/);
+            const endTenorMatch = endPoint.tenor.match(/(\d+)([MY])/);
+            
+            const startAmount = parseInt(startTenorMatch[1]);
+            const startUnit = startTenorMatch[2];
+            const startYears = startUnit === 'M' ? startAmount / 12 : startAmount;
+            
+            const endAmount = parseInt(endTenorMatch[1]);
+            const endUnit = endTenorMatch[2];
+            const endYears = endUnit === 'M' ? endAmount / 12 : endAmount;
+            
+            // Calculate forward rate
+            const forwardRate = (endPoint.zeroRate * endYears - startPoint.zeroRate * startYears) / (endYears - startYears);
+            
+            forwardRates.push({
+                startTenor: startPoint.tenor,
+                startTenorLabel: startPoint.tenorLabel,
+                endTenor: endPoint.tenor,
+                endTenorLabel: endPoint.tenorLabel,
+                rate: forwardRate
+            });
+        }
+        
+        // Generate par rates
+        const parRates = [];
+        for (let i = 0; i < curvePoints.length; i++) {
+            const point = curvePoints[i];
+            
+            // Convert tenor to years
+            const tenorMatch = point.tenor.match(/(\d+)([MY])/);
+            const amount = parseInt(tenorMatch[1]);
+            const unit = tenorMatch[2];
+            const years = unit === 'M' ? amount / 12 : amount;
+            
+            // Calculate sum of discount factors for full years
+            let sumDf = 0;
+            for (let j = 0; j <= i; j++) {
+                sumDf += curvePoints[j].discountFactor;
+            }
+            
+            // Calculate par rate
+            const parRate = (1 - point.discountFactor) / sumDf;
+            
+            parRates.push({
+                tenor: point.tenor,
+                tenorLabel: point.tenorLabel,
+                rate: parRate
+            });
+        }
+        
+        return {
+            curveId: "mock-curve-" + Math.random().toString(36).substr(2, 9),
+            method: requestData.curveMethod,
+            interpolation: requestData.interpolationMethod,
+            referenceDate: requestData.referenceDate,
+            dayCount: requestData.dayCount,
+            curvePoints: curvePoints,
+            forwardRates: forwardRates,
+            parRates: parRates
+        };
+    }
+
+    function displayResults(data) {
+        // Create yield curve chart
+        createYieldCurveChart(data);
+
+        // Create discount factor chart
+        createDiscountFactorChart(data);
+
+        // Create forward rate chart
+        createForwardRateChart(data);
+
+        // Create par rate chart
+        createParRateChart(data);
+
+        // Populate tables
+        populateDiscountFactorsTable(data);
+        populateForwardRatesTable(data);
+        populateParRatesTable(data);
+    }
+
+    function createYieldCurveChart(data) {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded. Cannot create chart.');
+            return;
+        }
+
+        const ctx = document.getElementById('yieldCurveChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.yieldCurveChart && typeof window.yieldCurveChart.destroy === 'function') {
+            window.yieldCurveChart.destroy();
+        }
+
+        // Extract data
+        const tenors = data.curvePoints.map(point => point.tenorLabel);
+        const rates = data.curvePoints.map(point => point.zeroRate * 100); // Convert to percentage
+
+        // Create chart
+        window.yieldCurveChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: tenors,
+                datasets: [{
+                    label: 'Zero Rates (%)',
+                    data: rates,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tenor'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Zero Rate (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Zero Curve'
+                    }
+                }
+            }
+        });
+    }
+
+    function createDiscountFactorChart(data) {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded. Cannot create chart.');
+            return;
+        }
+
+        const ctx = document.getElementById('discountFactorChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.discountFactorChart && typeof window.discountFactorChart.destroy === 'function') {
+            window.discountFactorChart.destroy();
+        }
+
+        // Extract data
+        const tenors = data.curvePoints.map(point => point.tenorLabel);
+        const discountFactors = data.curvePoints.map(point => point.discountFactor);
+
+        // Create chart
+        window.discountFactorChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: tenors,
+                datasets: [{
+                    label: 'Discount Factors',
+                    data: discountFactors,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tenor'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Discount Factor'
+                        },
+                        min: 0,
+                        max: 1
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Discount Factors'
+                    }
+                }
+            }
+        });
+    }
+
+    function createForwardRateChart(data) {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded. Cannot create chart.');
+            return;
+        }
+
+        const ctx = document.getElementById('forwardRateChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.forwardRateChart && typeof window.forwardRateChart.destroy === 'function') {
+            window.forwardRateChart.destroy();
+        }
+
+        // Extract data
+        const tenors = data.forwardRates.map(point => `${point.startTenorLabel} → ${point.endTenorLabel}`);
+        const rates = data.forwardRates.map(point => point.rate * 100); // Convert to percentage
+
+        // Create chart
+        window.forwardRateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: tenors,
+                datasets: [{
+                    label: 'Forward Rates (%)',
+                    data: rates,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tenor Period'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Forward Rate (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Forward Rates'
+                    }
+                }
+            }
+        });
+    }
+
+    function createParRateChart(data) {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js is not loaded. Cannot create chart.');
+            return;
+        }
+
+        const ctx = document.getElementById('parRateChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.parRateChart && typeof window.parRateChart.destroy === 'function') {
+            window.parRateChart.destroy();
+        }
+
+        // Extract data
+        const tenors = data.parRates.map(point => point.tenorLabel);
+        const rates = data.parRates.map(point => point.rate * 100); // Convert to percentage
+
+        // Create chart
+        window.parRateChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: tenors,
+                datasets: [{
+                    label: 'Par Rates (%)',
+                    data: rates,
+                    borderColor: 'rgb(153, 102, 255)',
+                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tenor'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Par Rate (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Par Rates'
+                    }
+                }
+            }
+        });
+    }
+
+    function populateDiscountFactorsTable(data) {
+        const tableBody = document.getElementById('discountFactorsTableBody');
+        tableBody.innerHTML = '';
+
+        data.curvePoints.forEach(point => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${point.tenorLabel}</td>
+                <td>${formatDate(point.date)}</td>
+                <td>${point.discountFactor.toFixed(6)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function populateForwardRatesTable(data) {
+        const tableBody = document.getElementById('forwardRatesTableBody');
+        tableBody.innerHTML = '';
+
+        data.forwardRates.forEach(point => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${point.startTenorLabel}</td>
+                <td>${point.endTenorLabel}</td>
+                <td>${(point.rate * 100).toFixed(4)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function populateParRatesTable(data) {
+        const tableBody = document.getElementById('parRatesTableBody');
+        tableBody.innerHTML = '';
+
+        data.parRates.forEach(point => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${point.tenorLabel}</td>
+                <td>${(point.rate * 100).toFixed(4)}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    function calculateRateForTenor() {
+        if (!window.curveData) {
+            showError('Please build a yield curve first.');
+            return;
+        }
+
+        const tenorInput = document.getElementById('tenorInput').value.trim();
+        if (!tenorInput) {
+            showError('Please enter a valid tenor.');
+            return;
+        }
+
+        // Find nearest tenor in curve data
+        const tenorMatch = tenorInput.match(/(\d+)([MY])/);
+        if (!tenorMatch) {
+            showError('Invalid tenor format. Use format like 1M, 5Y, etc.');
+            return;
+        }
+
+        const amount = parseInt(tenorMatch[1]);
+        const unit = tenorMatch[2];
+        const tenorMonths = unit === 'M' ? amount : amount * 12;
+
+        // Find nearest tenor in curve data
+        let nearestPoint = null;
+        let minDiff = Infinity;
+
+        for (const point of window.curveData.curvePoints) {
+            const pointMatch = point.tenor.match(/(\d+)([MY])/);
+            if (pointMatch) {
+                const pointAmount = parseInt(pointMatch[1]);
+                const pointUnit = pointMatch[2];
+                const pointMonths = pointUnit === 'M' ? pointAmount : pointAmount * 12;
+                
+                const diff = Math.abs(pointMonths - tenorMonths);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    nearestPoint = point;
+                }
+            }
+        }
+
+        if (!nearestPoint) {
+            showError('Could not find a matching tenor in the curve.');
+            return;
+        }
+
+        // Find forward rate (1-year forward)
+        let forwardRate = 0;
+        for (const fr of window.curveData.forwardRates) {
+            const startMatch = fr.startTenor.match(/(\d+)([MY])/);
+            const endMatch = fr.endTenor.match(/(\d+)([MY])/);
+            
+            if (startMatch && endMatch) {
+                const startAmount = parseInt(startMatch[1]);
+                const startUnit = startMatch[2];
+                const startMonths = startUnit === 'M' ? startAmount : startAmount * 12;
+                
+                if (Math.abs(startMonths - tenorMonths) < 12) {
+                    forwardRate = fr.rate;
+                    break;
+                }
+            }
+        }
+
+        // Display results
+        document.getElementById('tenorValue').textContent = tenorInput;
+        document.getElementById('zeroRateValue').textContent = (nearestPoint.zeroRate * 100).toFixed(4) + '%';
+        document.getElementById('dfValue').textContent = nearestPoint.discountFactor.toFixed(6);
+        document.getElementById('forwardRateValue').textContent = (forwardRate * 100).toFixed(4) + '%';
+
+        // Show result div
+        document.getElementById('tenorResult').style.display = 'block';
+    }
+
+    function resetForm() {
+        // Reset to default values
+        document.getElementById('curveMethod').value = 'bootstrap';
+        document.getElementById('interpolationMethod').value = 'linear';
+        document.getElementById('referenceDate').valueAsDate = new Date();
+        document.getElementById('dayCount').value = 'actual/365';
+
+        // Reset parametric model parameters
+        document.getElementById('beta0').value = '0.05';
+        document.getElementById('beta1').value = '0.02';
+        document.getElementById('beta2').value = '-0.01';
+        document.getElementById('tau').value = '2.0';
+        document.getElementById('beta3').value = '0.01';
+        document.getElementById('tau2').value = '5.0';
+
+        // Clear instruments table
+        document.getElementById('instrumentsTableBody').innerHTML = '';
+        instruments.length = 0;
+
+        // Re-initialize with default instruments
+        initializeInstrumentsTable();
+
+        // Reset tenor input
+        document.getElementById('tenorInput').value = '';
+        document.getElementById('tenorResult').style.display = 'none';
+
+        // Hide results and messages
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+
+        // Trigger change events to update form appearance
+        document.getElementById('curveMethod').dispatchEvent(new Event('change'));
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        const successElement = document.getElementById('successMessage');
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+</script>
+</body>
+</html>

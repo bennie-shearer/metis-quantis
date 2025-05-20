@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binomial Tree Option Pricer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .results-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .tree-section {
+            width: 100%;
+            margin-top: 20px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow-x: auto;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        #binomialTree {
+            margin-top: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .node {
+            display: inline-block;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: #3498db;
+            color: white;
+            text-align: center;
+            margin: 5px;
+            font-size: 12px;
+            position: relative;
+            line-height: 1.2;
+            padding-top: 20px;
+            box-sizing: border-box;
+        }
+
+        .tree-row {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .line {
+            position: absolute;
+            height: 2px;
+            background-color: #666;
+            transform-origin: 0 0;
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+<h1>Binomial Tree Option Pricer</h1>
+<p>Price European and American options using the Cox-Ross-Rubinstein binomial tree model.</p>
+
+<div class="container">
+    <div class="input-section">
+        <h2>Parameters</h2>
+        <div class="form-group">
+            <label for="spotPrice">Spot Price ($)</label>
+            <input type="number" id="spotPrice" value="100" min="0.01" step="0.01">
+        </div>
+
+        <div class="form-group">
+            <label for="strikePrice">Strike Price ($)</label>
+            <input type="number" id="strikePrice" value="100" min="0.01" step="0.01">
+        </div>
+
+        <div class="form-group">
+            <label for="riskFreeRate">Risk-Free Rate (%)</label>
+            <input type="number" id="riskFreeRate" value="5" min="0" max="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label for="dividend">Dividend Yield (%)</label>
+            <input type="number" id="dividend" value="2" min="0" max="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label for="volatility">Volatility (%)</label>
+            <input type="number" id="volatility" value="20" min="0.1" max="200" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label for="timeToExpiry">Time to Expiry (years)</label>
+            <input type="number" id="timeToExpiry" value="1" min="0.05" max="30" step="0.05">
+        </div>
+
+        <div class="form-group">
+            <label for="numSteps">Number of Steps</label>
+            <input type="number" id="numSteps" value="4" min="1" max="10" step="1">
+            <small>Note: For visual tree display, use 4-5 steps maximum. For accurate pricing, increase to 50-1000 steps.</small>
+        </div>
+
+        <div class="form-group">
+            <label for="optionType">Option Type</label>
+            <select id="optionType">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="exerciseStyle">Exercise Style</label>
+            <select id="exerciseStyle">
+                <option value="european">European</option>
+                <option value="american">American</option>
+            </select>
+        </div>
+
+        <button id="calculatePrice">Calculate Price</button>
+    </div>
+
+    <div class="results-section">
+        <h2>Results</h2>
+        <div id="resultsContainer">
+            <p>Calculate a price to see results.</p>
+        </div>
+    </div>
+</div>
+
+<div class="tree-section">
+    <h2>Binomial Tree Visualization</h2>
+    <p>The tree below shows both stock prices and option values at each node.</p>
+    <div id="binomialTree"></div>
+</div>
+
+<script>
+    // DOM elements
+    const spotPriceInput = document.getElementById('spotPrice');
+    const strikePriceInput = document.getElementById('strikePrice');
+    const riskFreeRateInput = document.getElementById('riskFreeRate');
+    const dividendInput = document.getElementById('dividend');
+    const volatilityInput = document.getElementById('volatility');
+    const timeToExpiryInput = document.getElementById('timeToExpiry');
+    const numStepsInput = document.getElementById('numSteps');
+    const optionTypeSelect = document.getElementById('optionType');
+    const exerciseStyleSelect = document.getElementById('exerciseStyle');
+    const calculateButton = document.getElementById('calculatePrice');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const binomialTreeContainer = document.getElementById('binomialTree');
+
+    // Black-Scholes formula for comparison
+    function blackScholesPrice(S, K, r, q, sigma, T, isCall) {
+        // Convert percentages to decimals
+        r = r / 100;
+        q = q / 100;
+        sigma = sigma / 100;
+
+        const d1 = (Math.log(S / K) + (r - q + sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
+        const d2 = d1 - sigma * Math.sqrt(T);
+
+        const Nd1 = normalCDF(d1);
+        const Nd2 = normalCDF(d2);
+
+        if (isCall) {
+            return S * Math.exp(-q * T) * Nd1 - K * Math.exp(-r * T) * Nd2;
+        } else {
+            return K * Math.exp(-r * T) * (1 - Nd2) - S * Math.exp(-q * T) * (1 - Nd1);
+        }
+    }
+
+    // Normal cumulative distribution function
+    function normalCDF(x) {
+        const a1 = 0.254829592;
+        const a2 = -0.284496736;
+        const a3 = 1.421413741;
+        const a4 = -1.453152027;
+        const a5 = 1.061405429;
+        const p = 0.3275911;
+
+        const sign = x < 0 ? -1 : 1;
+        x = Math.abs(x) / Math.sqrt(2);
+
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+        return 0.5 * (1.0 + sign * y);
+    }
+
+    // Binomial Tree Option Pricer
+    class BinomialTreePricer {
+        constructor(numSteps) {
+            this.numSteps = numSteps;
+        }
+
+        priceOption(spotPrice, strikePrice, riskFreeRate, dividend, volatility,
+                    timeToExpiry, isCall, isAmerican) {
+            const dt = timeToExpiry / this.numSteps;
+
+            // Convert percentages to decimals
+            riskFreeRate = riskFreeRate / 100;
+            dividend = dividend / 100;
+            volatility = volatility / 100;
+
+            // Calculate up and down factors
+            const up = Math.exp(volatility * Math.sqrt(dt));
+            const down = 1.0 / up;
+
+            // Risk-neutral probability
+            const p = (Math.exp((riskFreeRate - dividend) * dt) - down) / (up - down);
+
+            // Store stock price tree
+            const stockTree = Array(this.numSteps + 1).fill().map(() => Array(this.numSteps + 1).fill(0));
+
+            // Initialize stock prices at nodes
+            for (let i = 0; i <= this.numSteps; i++) {
+                for (let j = 0; j <= i; j++) {
+                    stockTree[i][j] = spotPrice * Math.pow(up, j) * Math.pow(down, i - j);
+                }
+            }
+
+            // Initialize option values at expiration
+            let optionTree = Array(this.numSteps + 1).fill().map(() => Array(this.numSteps + 1).fill(0));
+
+            for (let j = 0; j <= this.numSteps; j++) {
+                if (isCall) {
+                    optionTree[this.numSteps][j] = Math.max(0, stockTree[this.numSteps][j] - strikePrice);
+                } else {
+                    optionTree[this.numSteps][j] = Math.max(0, strikePrice - stockTree[this.numSteps][j]);
+                }
+            }
+
+            // Work backwards through the tree
+            for (let i = this.numSteps - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    // Option value is discounted expected value
+                    optionTree[i][j] = Math.exp(-riskFreeRate * dt) *
+                        (p * optionTree[i+1][j+1] + (1 - p) * optionTree[i+1][j]);
+
+                    // For American options, check for early exercise
+                    if (isAmerican) {
+                        let intrinsicValue;
+                        if (isCall) {
+                            intrinsicValue = Math.max(0, stockTree[i][j] - strikePrice);
+                        } else {
+                            intrinsicValue = Math.max(0, strikePrice - stockTree[i][j]);
+                        }
+                        optionTree[i][j] = Math.max(optionTree[i][j], intrinsicValue);
+                    }
+                }
+            }
+
+            // Return result with both option price and trees
+            return {
+                price: optionTree[0][0],
+                stockTree: stockTree,
+                optionTree: optionTree,
+                up: up,
+                down: down,
+                probability: p
+            };
+        }
+    }
+
+    // Calculate option price when button is clicked
+    calculateButton.addEventListener('click', () => {
+        // Get parameters
+        const spotPrice = parseFloat(spotPriceInput.value);
+        const strikePrice = parseFloat(strikePriceInput.value);
+        const riskFreeRate = parseFloat(riskFreeRateInput.value);
+        const dividend = parseFloat(dividendInput.value);
+        const volatility = parseFloat(volatilityInput.value);
+        const timeToExpiry = parseFloat(timeToExpiryInput.value);
+        const numSteps = parseInt(numStepsInput.value);
+        const isCall = optionTypeSelect.value === 'call';
+        const isAmerican = exerciseStyleSelect.value === 'american';
+
+        // Create binomial tree pricer
+        const pricer = new BinomialTreePricer(numSteps);
+
+        // Calculate option price
+        const result = pricer.priceOption(
+            spotPrice, strikePrice, riskFreeRate, dividend,
+            volatility, timeToExpiry, isCall, isAmerican
+        );
+
+        // Calculate Black-Scholes price for comparison (for European options)
+        let bsPrice = null;
+        if (!isAmerican) {
+            bsPrice = blackScholesPrice(
+                spotPrice, strikePrice, riskFreeRate, dividend,
+                volatility, timeToExpiry, isCall
+            );
+        }
+
+        // Display results
+        displayResults(result, bsPrice, isCall, isAmerican);
+
+        // Visualize tree
+        visualizeTree(result, numSteps, isCall, isAmerican);
+    });
+
+    // Display results in the results section
+    function displayResults(result, bsPrice, isCall, isAmerican) {
+        const optionTypeText = isCall ? 'Call' : 'Put';
+        const exerciseStyleText = isAmerican ? 'American' : 'European';
+
+        let resultsHTML = `
+                <h3>${exerciseStyleText} ${optionTypeText} Option Price</h3>
+                <table>
+                    <tr>
+                        <th>Parameter</th>
+                        <th>Value</th>
+                    </tr>
+                    <tr>
+                        <td>Binomial Tree Price</td>
+                        <td>$${result.price.toFixed(4)}</td>
+                    </tr>
+            `;
+
+        if (bsPrice !== null) {
+            const difference = Math.abs(result.price - bsPrice);
+            resultsHTML += `
+                    <tr>
+                        <td>Black-Scholes Price</td>
+                        <td>$${bsPrice.toFixed(4)}</td>
+                    </tr>
+                    <tr>
+                        <td>Difference</td>
+                        <td>$${difference.toFixed(4)}</td>
+                    </tr>
+                `;
+        }
+
+        resultsHTML += `
+                    <tr>
+                        <td>Up Factor (u)</td>
+                        <td>${result.up.toFixed(4)}</td>
+                    </tr>
+                    <tr>
+                        <td>Down Factor (d)</td>
+                        <td>${result.down.toFixed(4)}</td>
+                    </tr>
+                    <tr>
+                        <td>Risk-Neutral Probability (p)</td>
+                        <td>${result.probability.toFixed(4)}</td>
+                    </tr>
+                </table>
+            `;
+
+        if (isAmerican) {
+            resultsHTML += `
+                    <p><em>Note: American options may be worth more than European options due to
+                    the possibility of early exercise. This is especially true for put options or
+                    calls on stocks with high dividend yields.</em></p>
+                `;
+        }
+
+        resultsContainer.innerHTML = resultsHTML;
+    }
+
+    // Visualize binomial tree
+    function visualizeTree(result, numSteps, isCall, isAmerican) {
+        binomialTreeContainer.innerHTML = '';
+
+        // Only show the tree if it's small enough to display
+        if (numSteps > 5) {
+            binomialTreeContainer.innerHTML = `
+                    <p>Tree visualization is only available for 5 or fewer steps. Current steps: ${numSteps}</p>
+                    <p>Please reduce the number of steps to view the tree visualization.</p>
+                `;
+            return;
+        }
+
+        // Create tree visualization
+        for (let i = 0; i <= numSteps; i++) {
+            const row = document.createElement('div');
+            row.className = 'tree-row';
+
+            for (let j = 0; j <= i; j++) {
+                const node = document.createElement('div');
+                node.className = 'node';
+
+                // Calculate early exercise indicator for American options
+                let earlyExercise = '';
+                if (isAmerican && i < numSteps) {
+                    const intrinsicValue = isCall ?
+                        Math.max(0, result.stockTree[i][j] - parseFloat(strikePriceInput.value)) :
+                        Math.max(0, parseFloat(strikePriceInput.value) - result.stockTree[i][j]);
+
+                    if (Math.abs(result.optionTree[i][j] - intrinsicValue) < 0.0001 && intrinsicValue > 0) {
+                        earlyExercise = '<br><strong style="color: red;">✓ Exercise</strong>';
+                    }
+                }
+
+                node.innerHTML = `
+                        <strong>Stock: $${result.stockTree[i][j].toFixed(2)}</strong><br>
+                        Option: $${result.optionTree[i][j].toFixed(2)}
+                        ${earlyExercise}
+                    `;
+
+                row.appendChild(node);
+            }
+
+            binomialTreeContainer.appendChild(row);
+        }
+
+        // Add connecting lines between nodes
+        // This is more complex and would require additional positioning logic
+        // For simplicity, we're omitting the connecting lines in this version
+    }
+
+    // Run a calculation on page load with default values
+    window.addEventListener('load', () => {
+        calculateButton.click();
+    });
+</script>
+</body>
+</html>

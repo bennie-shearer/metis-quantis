@@ -1,0 +1,1105 @@
+<!-- var-calculator.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantLib Value at Risk (VaR) Calculator</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --primary-dark: #1e6091;
+            --primary-light: #a0cfee;
+            --secondary-color: #93c5fd;
+            --background-color: #ffffff;
+            --light-color: #f5f5f5;
+            --light-gray: #f0f0f0;
+            --mid-gray: #e0e0e0;
+            --border-color: #e5e7eb;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --success-color: #22c55e;
+            --success-light: #dcfce7;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --hover-bg: #e9f7fe;
+            --button-bg: #f9fafb;
+            --button-hover: #f3f4f6;
+            --button-active: #e5e7eb;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --border-radius-sm: 2px;
+            --border-radius-md: 4px;
+            --border-radius-lg: 8px;
+            --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family-base);
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .tool-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tool-link {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            transition: background-color 0.2s;
+        }
+
+        .tool-link:hover {
+            background-color: var(--hover-bg);
+            text-decoration: none;
+        }
+
+        .tool-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .parameter-section {
+            margin-bottom: 20px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -8px;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            padding: 0 8px;
+        }
+
+        .col-md-4 {
+            flex: 0 0 33.333333%;
+            padding: 0 8px;
+        }
+
+        .col-md-3 {
+            flex: 0 0 25%;
+            padding: 0 8px;
+        }
+
+        .col-sm-12 {
+            flex: 0 0 100%;
+            padding: 0 8px;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            transition: border-color 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--button-hover);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-success {
+            background-color: var(--success-color);
+            color: white;
+            border-color: var(--success-color);
+        }
+
+        .btn-success:hover {
+            background-color: #1ea64b;
+        }
+
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            padding: 10px;
+            background-color: var(--danger-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            padding: 10px;
+            background-color: var(--success-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loader {
+            border: 6px solid var(--light-color);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background-color: var(--light-color);
+            border: none;
+            cursor: pointer;
+            border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--spacing-md);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: var(--spacing-sm);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background-color: var(--light-color);
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            overflow: hidden;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .card-header {
+            background-color: var(--light-color);
+            padding: var(--spacing-md);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-body {
+            padding: var(--spacing-md);
+        }
+
+        .var-highlight {
+            background-color: var(--warning-light);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius-md);
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .var-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .instrument-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .risk-factor-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .add-button {
+            margin-top: var(--spacing-sm);
+        }
+
+        @media (max-width: 768px) {
+            .col-md-6, .col-md-4, .col-md-3 {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>QuantLib Value at Risk (VaR) Calculator</h1>
+
+    <div class="tool-nav">
+        <a href="index.html" class="tool-link">Home</a>
+        <a href="bond-calculator.html" class="tool-link">Bond Calculator</a>
+        <a href="option-calculator.html" class="tool-link">Option Calculator</a>
+        <a href="swap-calculator.html" class="tool-link">Swap Calculator</a>
+        <a href="var-calculator.html" class="tool-link active">VaR Calculator</a>
+        <a href="yield-curve-builder.html" class="tool-link">Yield Curve</a>
+    </div>
+
+    <div class="parameter-section">
+        <h2>VaR Parameters</h2>
+        <div class="row">
+            <div class="col-md-4 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="methodSelect">VaR Method</label>
+                    <select id="methodSelect" class="form-control">
+                        <option value="historical">Historical Simulation</option>
+                        <option value="parametric">Parametric (Variance-Covariance)</option>
+                        <option value="monte-carlo">Monte Carlo Simulation</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="confidenceLevel">Confidence Level (%)</label>
+                    <input type="number" id="confidenceLevel" class="form-control" value="95" min="1" max="99.9" step="0.1">
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="timeHorizon">Time Horizon (days)</label>
+                    <input type="number" id="timeHorizon" class="form-control" value="1" min="1" step="1">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Portfolio Instruments</h2>
+        <table id="instrumentTable" class="instrument-table table">
+            <thead>
+            <tr>
+                <th>Instrument Type</th>
+                <th>Notional</th>
+                <th>Market Value</th>
+                <th>Volatility (%)</th>
+                <th>Risk Factor Sensitivities</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="instrumentTableBody">
+            <!-- Instruments will be added here -->
+            </tbody>
+        </table>
+        <button id="addInstrumentButton" class="btn btn-success add-button">Add Instrument</button>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Risk Factors</h2>
+        <table id="riskFactorTable" class="risk-factor-table table">
+            <thead>
+            <tr>
+                <th>Risk Factor Name</th>
+                <th>Volatility (%)</th>
+                <th>Historical Returns (comma-separated)</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody id="riskFactorTableBody">
+            <!-- Risk factors will be added here -->
+            </tbody>
+        </table>
+        <button id="addRiskFactorButton" class="btn btn-success add-button">Add Risk Factor</button>
+    </div>
+
+    <div class="text-center">
+        <button id="calculateButton" class="btn btn-primary">Calculate VaR</button>
+        <button id="resetButton" class="btn">Reset</button>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+    <div id="loader" class="loader"></div>
+
+    <div id="resultsSection" class="results-section">
+        <h2>Value at Risk Results</h2>
+
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="var-highlight">
+                    <div>
+                        <h3>Value at Risk (VaR)</h3>
+                        <p>Potential loss at <span id="confidenceLevelResult">95</span>% confidence over <span id="timeHorizonResult">1</span>-day horizon</p>
+                    </div>
+                    <div class="var-value" id="varResult">$0.00</div>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="var-highlight">
+                    <div>
+                        <h3>Conditional VaR (CVaR)</h3>
+                        <p>Expected loss beyond VaR (Expected Shortfall)</p>
+                    </div>
+                    <div class="var-value" id="cvarResult">$0.00</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="summaryTab">Summary</button>
+                <button class="tab-button" data-tab="correlationTab">Correlation Matrix</button>
+                <button class="tab-button" data-tab="chartsTab">Charts</button>
+            </div>
+
+            <div class="tab-content active" id="summaryTab">
+                <div class="card">
+                    <div class="card-header">VaR Summary</div>
+                    <div class="card-body">
+                        <table class="table">
+                            <tbody>
+                            <tr>
+                                <td><strong>VaR Method</strong></td>
+                                <td id="methodResult">Historical Simulation</td>
+                            </tr>
+                            <tr>
+                                <td><strong>VaR Amount</strong></td>
+                                <td id="varAmountResult">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>VaR (% of Portfolio)</strong></td>
+                                <td id="varPercentageResult">0.00%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>CVaR Amount</strong></td>
+                                <td id="cvarAmountResult">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td><strong>CVaR (% of Portfolio)</strong></td>
+                                <td id="cvarPercentageResult">0.00%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Portfolio Value</strong></td>
+                                <td id="portfolioValueResult">$0.00</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="correlationTab">
+                <h3>Risk Factor Correlation Matrix</h3>
+                <div id="correlationMatrixContainer">
+                    <table id="correlationMatrix" class="table">
+                        <!-- Correlation matrix will be populated by JavaScript -->
+                    </table>
+                </div>
+            </div>
+
+            <div class="tab-content" id="chartsTab">
+                <div class="chart-container">
+                    <canvas id="varDistributionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="varSensitivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize tables with some default data
+        addDefaultInstrument();
+        addDefaultRiskFactors();
+
+        // Setup tab navigation
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Find parent tab container
+                const tabContainer = button.closest('.tab-container');
+
+                // Remove active class from all buttons and content in this container
+                tabContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                tabContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                // Add active class to selected button and content
+                button.classList.add('active');
+                tabContainer.querySelector(`#${button.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Setup add instrument button
+        document.getElementById('addInstrumentButton').addEventListener('click', addInstrument);
+
+        // Setup add risk factor button
+        document.getElementById('addRiskFactorButton').addEventListener('click', addRiskFactor);
+
+        // Setup calculate button
+        document.getElementById('calculateButton').addEventListener('click', calculateVaR);
+
+        // Setup reset button
+        document.getElementById('resetButton').addEventListener('click', resetForm);
+    });
+
+    function addDefaultInstrument() {
+        const instrumentTableBody = document.getElementById('instrumentTableBody');
+        const row = instrumentTableBody.insertRow();
+
+        row.innerHTML = `
+            <td>
+                <select class="form-control instrument-type">
+                    <option value="bond">Bond</option>
+                    <option value="equity">Equity</option>
+                    <option value="option">Option</option>
+                    <option value="swap">Swap</option>
+                </select>
+            </td>
+            <td><input type="number" class="form-control instrument-notional" value="1000000" min="0" step="1000"></td>
+            <td><input type="number" class="form-control instrument-market-value" value="1000000" step="1000"></td>
+            <td><input type="number" class="form-control instrument-volatility" value="15" min="0" step="0.1"></td>
+            <td><input type="text" class="form-control instrument-sensitivities" value="1.0, 0.5, 0.2" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-instrument">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row.querySelector('.remove-instrument').addEventListener('click', function() {
+            instrumentTableBody.removeChild(row);
+        });
+    }
+
+    function addDefaultRiskFactors() {
+        const riskFactorTableBody = document.getElementById('riskFactorTableBody');
+
+        // Interest Rate risk factor
+        let row1 = riskFactorTableBody.insertRow();
+        row1.innerHTML = `
+            <td><input type="text" class="form-control risk-factor-name" value="Interest Rate"></td>
+            <td><input type="number" class="form-control risk-factor-volatility" value="0.2" min="0" step="0.01"></td>
+            <td><input type="text" class="form-control risk-factor-returns" value="0.001, -0.002, 0.0015, -0.001, 0.0005" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-risk-factor">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row1.querySelector('.remove-risk-factor').addEventListener('click', function() {
+            riskFactorTableBody.removeChild(row1);
+        });
+
+        // Equity Market risk factor
+        let row2 = riskFactorTableBody.insertRow();
+        row2.innerHTML = `
+            <td><input type="text" class="form-control risk-factor-name" value="Equity Market"></td>
+            <td><input type="number" class="form-control risk-factor-volatility" value="1.5" min="0" step="0.01"></td>
+            <td><input type="text" class="form-control risk-factor-returns" value="0.005, -0.01, 0.008, -0.006, 0.003" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-risk-factor">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row2.querySelector('.remove-risk-factor').addEventListener('click', function() {
+            riskFactorTableBody.removeChild(row2);
+        });
+
+        // Credit Spread risk factor
+        let row3 = riskFactorTableBody.insertRow();
+        row3.innerHTML = `
+            <td><input type="text" class="form-control risk-factor-name" value="Credit Spread"></td>
+            <td><input type="number" class="form-control risk-factor-volatility" value="0.3" min="0" step="0.01"></td>
+            <td><input type="text" class="form-control risk-factor-returns" value="0.002, -0.003, 0.0025, -0.002, 0.001" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-risk-factor">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row3.querySelector('.remove-risk-factor').addEventListener('click', function() {
+            riskFactorTableBody.removeChild(row3);
+        });
+    }
+
+    function addInstrument() {
+        const instrumentTableBody = document.getElementById('instrumentTableBody');
+        const row = instrumentTableBody.insertRow();
+
+        row.innerHTML = `
+            <td>
+                <select class="form-control instrument-type">
+                    <option value="bond">Bond</option>
+                    <option value="equity">Equity</option>
+                    <option value="option">Option</option>
+                    <option value="swap">Swap</option>
+                </select>
+            </td>
+            <td><input type="number" class="form-control instrument-notional" value="1000000" min="0" step="1000"></td>
+            <td><input type="number" class="form-control instrument-market-value" value="1000000" step="1000"></td>
+            <td><input type="number" class="form-control instrument-volatility" value="15" min="0" step="0.1"></td>
+            <td><input type="text" class="form-control instrument-sensitivities" value="1.0, 0.5, 0.2" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-instrument">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row.querySelector('.remove-instrument').addEventListener('click', function() {
+            instrumentTableBody.removeChild(row);
+        });
+    }
+
+    function addRiskFactor() {
+        const riskFactorTableBody = document.getElementById('riskFactorTableBody');
+        const row = riskFactorTableBody.insertRow();
+
+        row.innerHTML = `
+            <td><input type="text" class="form-control risk-factor-name" value="New Risk Factor"></td>
+            <td><input type="number" class="form-control risk-factor-volatility" value="1.0" min="0" step="0.01"></td>
+            <td><input type="text" class="form-control risk-factor-returns" value="0.001, -0.002, 0.0015, -0.001, 0.0005" placeholder="Comma-separated values"></td>
+            <td><button class="btn btn-danger remove-risk-factor">Remove</button></td>
+        `;
+
+        // Add event listener to remove button
+        row.querySelector('.remove-risk-factor').addEventListener('click', function() {
+            riskFactorTableBody.removeChild(row);
+        });
+    }
+
+    function calculateVaR() {
+        // Hide any previous messages and show loader
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        // Get form values
+        const method = document.getElementById('methodSelect').value;
+        const confidenceLevel = parseFloat(document.getElementById('confidenceLevel').value) / 100; // Convert to decimal
+        const timeHorizon = parseInt(document.getElementById('timeHorizon').value);
+
+        // Collect instrument data
+        const instrumentTableBody = document.getElementById('instrumentTableBody');
+        const instruments = [];
+
+        for (let i = 0; i < instrumentTableBody.rows.length; i++) {
+            const row = instrumentTableBody.rows[i];
+
+            const type = row.querySelector('.instrument-type').value;
+            const notional = parseFloat(row.querySelector('.instrument-notional').value);
+            const marketValue = parseFloat(row.querySelector('.instrument-market-value').value);
+            const volatility = parseFloat(row.querySelector('.instrument-volatility').value) / 100; // Convert to decimal
+
+            // Parse comma-separated sensitivities
+            const sensitivitiesStr = row.querySelector('.instrument-sensitivities').value;
+            const sensitivities = sensitivitiesStr.split(',').map(s => parseFloat(s.trim()));
+
+            instruments.push({
+                type: type,
+                notional: notional,
+                marketValue: marketValue,
+                volatility: volatility,
+                riskFactorSensitivities: sensitivities
+            });
+        }
+
+        // Collect risk factor data
+        const riskFactorTableBody = document.getElementById('riskFactorTableBody');
+        const riskFactors = [];
+
+        for (let i = 0; i < riskFactorTableBody.rows.length; i++) {
+            const row = riskFactorTableBody.rows[i];
+
+            const name = row.querySelector('.risk-factor-name').value;
+            const volatility = parseFloat(row.querySelector('.risk-factor-volatility').value) / 100; // Convert to decimal
+
+            // Parse comma-separated historical returns
+            const returnsStr = row.querySelector('.risk-factor-returns').value;
+            const returns = returnsStr.split(',').map(r => parseFloat(r.trim()));
+
+            riskFactors.push({
+                name: name,
+                volatility: volatility,
+                historicalReturns: returns
+            });
+        }
+
+        // Validate inputs
+        if (instruments.length === 0) {
+            showError('Please add at least one instrument to the portfolio.');
+            return;
+        }
+
+        if (riskFactors.length === 0) {
+            showError('Please add at least one risk factor.');
+            return;
+        }
+
+        // Check if sensitivities match risk factors
+        for (let i = 0; i < instruments.length; i++) {
+            if (instruments[i].riskFactorSensitivities.length !== riskFactors.length) {
+                showError(`Instrument ${i + 1} has ${instruments[i].riskFactorSensitivities.length} sensitivities, but there are ${riskFactors.length} risk factors. Please ensure they match.`);
+                return;
+            }
+        }
+
+        // Create the request data
+        const requestData = {
+            method: method,
+            confidenceLevel: confidenceLevel,
+            timeHorizon: timeHorizon,
+            portfolio: instruments,
+            riskFactors: riskFactors
+        };
+
+        // Send the request to the API
+        fetch('/api/risk/var', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server returned ${response.status}: ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loader
+                document.getElementById('loader').style.display = 'none';
+
+                // Process and display results
+                displayResults(data);
+
+                // Show success message
+                showSuccess('VaR calculation completed successfully.');
+
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+
+                // Create charts
+                createDistributionChart(data);
+                createSensitivityChart(data);
+            })
+            .catch(error => {
+                console.error('API request failed:', error);
+                showError('Error: ' + error.message);
+            });
+    }
+
+    function displayResults(data) {
+        // Display VaR and CVaR results
+        document.getElementById('confidenceLevelResult').textContent = (data.confidenceLevel).toFixed(1);
+        document.getElementById('timeHorizonResult').textContent = data.timeHorizon;
+        document.getElementById('varResult').textContent = formatCurrency(data.var);
+        document.getElementById('cvarResult').textContent = formatCurrency(data.cvar);
+
+        // Display summary results
+        document.getElementById('methodResult').textContent = capitalize(data.method) + ' Method';
+        document.getElementById('varAmountResult').textContent = formatCurrency(data.var);
+        document.getElementById('varPercentageResult').textContent = data.varPercentage.toFixed(2) + '%';
+        document.getElementById('cvarAmountResult').textContent = formatCurrency(data.cvar);
+        document.getElementById('cvarPercentageResult').textContent = data.cvarPercentage.toFixed(2) + '%';
+        document.getElementById('portfolioValueResult').textContent = formatCurrency(data.totalPortfolioValue);
+
+        // Display correlation matrix
+        const correlationMatrix = document.getElementById('correlationMatrix');
+        correlationMatrix.innerHTML = ''; // Clear existing content
+
+        // Create header row with risk factor names
+        const headerRow = correlationMatrix.insertRow();
+        headerRow.insertCell().textContent = ''; // Empty corner cell
+
+        for (let i = 0; i < data.riskFactorNames.length; i++) {
+            const th = document.createElement('th');
+            th.textContent = data.riskFactorNames[i];
+            headerRow.appendChild(th);
+        }
+
+        // Create correlation matrix rows
+        for (let i = 0; i < data.correlationMatrix.length; i++) {
+            const row = correlationMatrix.insertRow();
+
+            // Add risk factor name as row header
+            const th = document.createElement('th');
+            th.textContent = data.riskFactorNames[i];
+            row.appendChild(th);
+
+            // Add correlation values
+            for (let j = 0; j < data.correlationMatrix[i].length; j++) {
+                const cell = row.insertCell();
+                const value = data.correlationMatrix[i][j];
+
+                cell.textContent = value.toFixed(2);
+
+                // Color-code cells based on correlation value
+                if (i !== j) { // Skip diagonal (self-correlation)
+                    if (value > 0.7) {
+                        cell.style.backgroundColor = 'rgba(220, 53, 69, 0.2)'; // Red for high positive correlation
+                    } else if (value < -0.7) {
+                        cell.style.backgroundColor = 'rgba(0, 123, 255, 0.2)'; // Blue for high negative correlation
+                    } else if (value > 0.3) {
+                        cell.style.backgroundColor = 'rgba(220, 53, 69, 0.1)'; // Light red for moderate positive correlation
+                    } else if (value < -0.3) {
+                        cell.style.backgroundColor = 'rgba(0, 123, 255, 0.1)'; // Light blue for moderate negative correlation
+                    }
+                } else {
+                    cell.style.backgroundColor = 'rgba(240, 240, 240, 0.5)'; // Gray for diagonal
+                }
+            }
+        }
+    }
+
+    function createDistributionChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('varDistributionChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.varDistributionChart) {
+            window.varDistributionChart.destroy();
+        }
+
+        // Generate a normal distribution based on the VaR result
+        // This is a simplified approach since we don't have the actual distribution from the API
+        const mean = 0;
+        const stdDev = data.var / 1.645; // Approximate for 95% confidence level
+        const points = 100;
+        const step = stdDev * 4 / points;
+
+        const xValues = [];
+        const yValues = [];
+
+        for (let i = 0; i <= points; i++) {
+            const x = mean - stdDev * 2 + i * step;
+            const y = Math.exp(-(x - mean) ** 2 / (2 * stdDev ** 2)) / (stdDev * Math.sqrt(2 * Math.PI));
+            xValues.push(x);
+            yValues.push(y);
+        }
+
+        // Create the chart
+        window.varDistributionChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: xValues,
+                datasets: [{
+                    label: 'Portfolio Returns Distribution',
+                    data: yValues,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }, {
+                    label: 'VaR Threshold',
+                    data: xValues.map(x => x <= -data.var / data.totalPortfolioValue ? 0 : null),
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Portfolio Return'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return (value * 100).toFixed(1) + '%';
+                            }
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Probability Density'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Portfolio Return Distribution and VaR'
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                xMin: -data.var / data.totalPortfolioValue,
+                                xMax: -data.var / data.totalPortfolioValue,
+                                borderColor: 'rgb(255, 99, 132)',
+                                borderWidth: 2
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createSensitivityChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('varSensitivityChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.varSensitivityChart) {
+            window.varSensitivityChart.destroy();
+        }
+
+        // Create a sensitivity analysis based on risk factors
+        // This is a simplified mock-up of what could be done with more data
+        const riskFactorNames = data.riskFactorNames;
+        const varContributions = [];
+
+        // Mock up some contributions - in a real implementation, this would come from the API
+        let remainingContribution = data.var;
+        for (let i = 0; i < riskFactorNames.length; i++) {
+            // Last risk factor gets the remainder
+            if (i === riskFactorNames.length - 1) {
+                varContributions.push(remainingContribution);
+            } else {
+                // Allocate a random portion of the remaining contribution
+                const contribution = remainingContribution * (0.2 + Math.random() * 0.4);
+                varContributions.push(contribution);
+                remainingContribution -= contribution;
+            }
+        }
+
+        // Create the chart
+        window.varSensitivityChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: riskFactorNames,
+                datasets: [{
+                    label: 'VaR Contribution',
+                    data: varContributions,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(54, 162, 235, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(153, 102, 255, 0.6)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'VaR Contribution'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return formatCurrency(value);
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Risk Factor'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'VaR Contribution by Risk Factor'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const value = context.raw;
+                                const percentage = (value / data.var * 100).toFixed(1);
+                                return `${formatCurrency(value)} (${percentage}% of total VaR)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function resetForm() {
+        // Reset to default values
+        document.getElementById('methodSelect').value = 'historical';
+        document.getElementById('confidenceLevel').value = '95';
+        document.getElementById('timeHorizon').value = '1';
+
+        // Clear instrument table
+        const instrumentTableBody = document.getElementById('instrumentTableBody');
+        instrumentTableBody.innerHTML = '';
+        addDefaultInstrument();
+
+        // Clear risk factor table
+        const riskFactorTableBody = document.getElementById('riskFactorTableBody');
+        riskFactorTableBody.innerHTML = '';
+        addDefaultRiskFactors();
+
+        // Hide results and messages
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        const successElement = document.getElementById('successMessage');
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    function capitalize(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1124 @@
+<!-- swap-calculator.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantLib Swap Calculator</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-hover: #2980b9;
+            --primary-dark: #1e6091;
+            --primary-light: #a0cfee;
+            --secondary-color: #93c5fd;
+            --background-color: #ffffff;
+            --light-color: #f5f5f5;
+            --light-gray: #f0f0f0;
+            --mid-gray: #e0e0e0;
+            --border-color: #e5e7eb;
+            --text-color: #333333;
+            --text-secondary: #666666;
+            --success-color: #22c55e;
+            --success-light: #dcfce7;
+            --warning-color: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger-color: #ef4444;
+            --danger-light: #fee2e2;
+            --info-color: #3b82f6;
+            --info-light: #dbeafe;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --hover-bg: #e9f7fe;
+            --button-bg: #f9fafb;
+            --button-hover: #f3f4f6;
+            --button-active: #e5e7eb;
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+            --border-radius-sm: 2px;
+            --border-radius-md: 4px;
+            --border-radius-lg: 8px;
+            --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-family-base);
+        }
+
+        body {
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.5;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: var(--border-radius-lg);
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+
+        h1, h2, h3 {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .tool-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tool-link {
+            background-color: var(--light-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: var(--border-radius-md);
+            text-decoration: none;
+            transition: background-color var(--transition-normal);
+        }
+
+        .tool-link:hover {
+            background-color: var(--hover-bg);
+            text-decoration: none;
+        }
+
+        .tool-link.active {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .parameter-section {
+            margin-bottom: 20px;
+            padding: var(--spacing-md);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -8px;
+        }
+
+        .col-md-6 {
+            flex: 0 0 50%;
+            padding: 0 8px;
+        }
+
+        .col-md-4 {
+            flex: 0 0 33.333333%;
+            padding: 0 8px;
+        }
+
+        .col-sm-12 {
+            flex: 0 0 100%;
+            padding: 0 8px;
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            transition: border-color var(--transition-normal);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--button-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-md);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all var(--transition-normal);
+        }
+
+        .btn:hover {
+            background-color: var(--button-hover);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-hover);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .error-message {
+            color: var(--danger-color);
+            padding: 10px;
+            background-color: var(--danger-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: var(--success-color);
+            padding: 10px;
+            background-color: var(--success-light);
+            border-radius: var(--border-radius-md);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .loader {
+            border: 6px solid var(--light-color);
+            border-top: 6px solid var(--primary-color);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .tab-container {
+            margin-top: 20px;
+        }
+
+        .tab-buttons {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            padding: 10px 20px;
+            background-color: var(--light-color);
+            border: none;
+            cursor: pointer;
+            border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+            margin-right: 5px;
+        }
+
+        .tab-button.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: var(--spacing-md);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th,
+        .table td {
+            padding: var(--spacing-sm);
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            background-color: var(--light-color);
+            font-weight: 600;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .col-md-6, .col-md-4 {
+                flex: 0 0 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>QuantLib Swap Calculator</h1>
+
+    <div class="tool-nav">
+        <a href="index.html" class="tool-link">Home</a>
+        <a href="bond-calculator.html" class="tool-link">Bond Calculator</a>
+        <a href="option-calculator.html" class="tool-link">Option Calculator</a>
+        <a href="swap-calculator.html" class="tool-link active">Swap Calculator</a>
+        <a href="yield-curve-builder.html" class="tool-link">Yield Curve</a>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Swap Type</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="swapType">Swap Type</label>
+                    <select id="swapType" class="form-control">
+                        <option value="irs">Interest Rate Swap (IRS)</option>
+                        <option value="ccs">Cross-Currency Swap</option>
+                        <option value="basis">Basis Swap</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="calculationType">Calculation Type</label>
+                    <select id="calculationType" class="form-control">
+                        <option value="npv">NPV Calculation</option>
+                        <option value="fairRate">Fair Rate Calculation</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Swap Parameters</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="nominal">Nominal Amount</label>
+                    <input type="number" id="nominal" class="form-control" value="10000000" min="0" step="1000">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="effectiveDate">Effective Date</label>
+                    <input type="date" id="effectiveDate" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="maturityDate">Maturity Date</label>
+                    <input type="date" id="maturityDate" class="form-control">
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="fixedRate">Fixed Rate (%)</label>
+                    <input type="number" id="fixedRate" class="form-control" value="3.0" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Fixed Leg Parameters</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="fixedFrequency">Payment Frequency</label>
+                    <select id="fixedFrequency" class="form-control">
+                        <option value="1">Annual</option>
+                        <option value="2" selected>Semi-Annual</option>
+                        <option value="4">Quarterly</option>
+                        <option value="12">Monthly</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="fixedDayCount">Day Count Convention</label>
+                    <select id="fixedDayCount" class="form-control">
+                        <option value="30/360" selected>30/360</option>
+                        <option value="actual/360">Actual/360</option>
+                        <option value="actual/365">Actual/365</option>
+                        <option value="actual/actual">Actual/Actual</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="fixedBusinessDay">Business Day Convention</label>
+                    <select id="fixedBusinessDay" class="form-control">
+                        <option value="following">Following</option>
+                        <option value="modified-following" selected>Modified Following</option>
+                        <option value="preceding">Preceding</option>
+                        <option value="unadjusted">Unadjusted</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="fixedCalendar">Calendar</label>
+                    <select id="fixedCalendar" class="form-control">
+                        <option value="us" selected>United States</option>
+                        <option value="uk">United Kingdom</option>
+                        <option value="target">TARGET (Euro)</option>
+                        <option value="japan">Japan</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Floating Leg Parameters</h2>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingIndex">Reference Rate</label>
+                    <select id="floatingIndex" class="form-control">
+                        <option value="libor-usd-3m">USD LIBOR 3M</option>
+                        <option value="libor-usd-6m">USD LIBOR 6M</option>
+                        <option value="sofr">SOFR</option>
+                        <option value="euribor-3m">EURIBOR 3M</option>
+                        <option value="euribor-6m">EURIBOR 6M</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingFrequency">Payment Frequency</label>
+                    <select id="floatingFrequency" class="form-control">
+                        <option value="1">Annual</option>
+                        <option value="2">Semi-Annual</option>
+                        <option value="4" selected>Quarterly</option>
+                        <option value="12">Monthly</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingDayCount">Day Count Convention</label>
+                    <select id="floatingDayCount" class="form-control">
+                        <option value="30/360">30/360</option>
+                        <option value="actual/360" selected>Actual/360</option>
+                        <option value="actual/365">Actual/365</option>
+                        <option value="actual/actual">Actual/Actual</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingSpread">Spread (bps)</label>
+                    <input type="number" id="floatingSpread" class="form-control" value="0" step="0.1">
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingBusinessDay">Business Day Convention</label>
+                    <select id="floatingBusinessDay" class="form-control">
+                        <option value="following">Following</option>
+                        <option value="modified-following" selected>Modified Following</option>
+                        <option value="preceding">Preceding</option>
+                        <option value="unadjusted">Unadjusted</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="floatingCalendar">Calendar</label>
+                    <select id="floatingCalendar" class="form-control">
+                        <option value="us" selected>United States</option>
+                        <option value="uk">United Kingdom</option>
+                        <option value="target">TARGET (Euro)</option>
+                        <option value="japan">Japan</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="parameter-section">
+        <h2>Market Data</h2>
+        <div class="row">
+            <div class="col-md-4 col-sm-12">
+                <div class="form-group">
+                    <label class="form-label" for="marketDataSource">Data Source</label>
+                    <select id="marketDataSource" class="form-control">
+                        <option value="manual">Manual Entry</option>
+                        <option value="curve">Upload Curve File</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12" id="curveFileContainer" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label" for="curveFile">Curve File (CSV)</label>
+                    <input type="file" id="curveFile" class="form-control" accept=".csv">
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12" id="discountRateContainer">
+                <div class="form-group">
+                    <label class="form-label" for="discountRate">Discount Rate (%)</label>
+                    <input type="number" id="discountRate" class="form-control" value="3.2" min="0" step="0.01">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center">
+        <button id="calculateButton" class="btn btn-primary">Calculate Swap</button>
+        <button id="resetButton" class="btn">Reset</button>
+    </div>
+
+    <div id="errorMessage" class="error-message"></div>
+    <div id="successMessage" class="success-message"></div>
+    <div id="loader" class="loader"></div>
+
+    <div id="resultsSection" class="results-section">
+        <h2>Results</h2>
+
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-button active" data-tab="valuationTab">Valuation</button>
+                <button class="tab-button" data-tab="cashflowsTab">Cashflows</button>
+                <button class="tab-button" data-tab="sensitivitiesTab">Sensitivities</button>
+                <button class="tab-button" data-tab="chartsTab">Charts</button>
+            </div>
+
+            <div class="tab-content active" id="valuationTab">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Metric</th>
+                        <th>Value</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="valuationTableBody">
+                    <!-- Results will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="cashflowsTab">
+                <div class="row">
+                    <div class="col-md-6 col-sm-12">
+                        <h3>Fixed Leg Cashflows</h3>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Present Value</th>
+                                </tr>
+                                </thead>
+                                <tbody id="fixedCashflowsBody">
+                                <!-- Fixed leg cashflows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <h3>Floating Leg Cashflows</h3>
+                        <div class="table-wrapper">
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Rate</th>
+                                    <th>Amount</th>
+                                    <th>Present Value</th>
+                                </tr>
+                                </thead>
+                                <tbody id="floatingCashflowsBody">
+                                <!-- Floating leg cashflows will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" id="sensitivitiesTab">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Risk Factor</th>
+                        <th>Sensitivity</th>
+                        <th>Description</th>
+                    </tr>
+                    </thead>
+                    <tbody id="sensitivitiesTableBody">
+                    <!-- Sensitivities will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="tab-content" id="chartsTab">
+                <div class="chart-container">
+                    <canvas id="cashflowChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="discountFactorChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@2.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set default dates
+        const today = new Date();
+        const effectiveDate = document.getElementById('effectiveDate');
+        effectiveDate.valueAsDate = today;
+
+        const maturityDate = document.getElementById('maturityDate');
+        const maturityDay = new Date(today);
+        maturityDay.setFullYear(maturityDay.getFullYear() + 5);
+        maturityDate.valueAsDate = maturityDay;
+
+        // Setup market data source change handler
+        document.getElementById('marketDataSource').addEventListener('change', function() {
+            const source = this.value;
+            document.getElementById('curveFileContainer').style.display = (source === 'curve') ? 'block' : 'none';
+            document.getElementById('discountRateContainer').style.display = (source === 'manual') ? 'block' : 'none';
+        });
+
+        // Setup swap type change handler
+        document.getElementById('swapType').addEventListener('change', function() {
+            const swapType = this.value;
+
+            // Adjust UI based on swap type
+            if (swapType === 'ccs') {
+                // Show cross-currency specific fields
+                // (This would be implemented in a full version)
+            } else if (swapType === 'basis') {
+                // Show basis swap specific fields
+                // (This would be implemented in a full version)
+            }
+        });
+
+        // Setup tab navigation
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                // Find parent tab container
+                const tabContainer = button.closest('.tab-container');
+
+                // Remove active class from all buttons and content in this container
+                tabContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                tabContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+                // Add active class to selected button and content
+                button.classList.add('active');
+                tabContainer.querySelector(`#${button.dataset.tab}`).classList.add('active');
+            });
+        });
+
+        // Setup calculate button
+        document.getElementById('calculateButton').addEventListener('click', calculateSwap);
+
+        // Setup reset button
+        document.getElementById('resetButton').addEventListener('click', resetForm);
+    });
+
+    function calculateSwap() {
+        // Hide any previous messages and show loader
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'block';
+
+        // Get form values
+        const swapType = document.getElementById('swapType').value;
+        const calculationType = document.getElementById('calculationType').value;
+        const nominal = parseFloat(document.getElementById('nominal').value);
+        const effectiveDate = document.getElementById('effectiveDate').value;
+        const maturityDate = document.getElementById('maturityDate').value;
+        const fixedRate = parseFloat(document.getElementById('fixedRate').value) / 100; // Convert to decimal
+
+        // Fixed leg parameters
+        const fixedFrequency = parseInt(document.getElementById('fixedFrequency').value);
+        const fixedDayCount = document.getElementById('fixedDayCount').value;
+        const fixedBusinessDay = document.getElementById('fixedBusinessDay').value;
+        const fixedCalendar = document.getElementById('fixedCalendar').value;
+
+        // Floating leg parameters
+        const floatingIndex = document.getElementById('floatingIndex').value;
+        const floatingFrequency = parseInt(document.getElementById('floatingFrequency').value);
+        const floatingDayCount = document.getElementById('floatingDayCount').value;
+        const floatingSpread = parseFloat(document.getElementById('floatingSpread').value) / 10000; // Convert bps to decimal
+        const floatingBusinessDay = document.getElementById('floatingBusinessDay').value;
+        const floatingCalendar = document.getElementById('floatingCalendar').value;
+
+        // Market data
+        const marketDataSource = document.getElementById('marketDataSource').value;
+        const discountRate = parseFloat(document.getElementById('discountRate').value) / 100; // Convert to decimal
+
+        // Validate inputs
+        if (!effectiveDate || !maturityDate) {
+            showError('Effective date and maturity date are required.');
+            return;
+        }
+
+        if (new Date(effectiveDate) >= new Date(maturityDate)) {
+            showError('Maturity date must be after effective date.');
+            return;
+        }
+
+        if (isNaN(nominal) || nominal <= 0) {
+            showError('Nominal amount must be a positive number.');
+            return;
+        }
+
+        // Create the request data
+        const requestData = {
+            swapType: swapType,
+            calculationType: calculationType,
+            nominal: nominal,
+            effectiveDate: effectiveDate,
+            maturityDate: maturityDate,
+            fixedRate: fixedRate,
+            fixedLeg: {
+                frequency: fixedFrequency,
+                dayCount: fixedDayCount,
+                businessDayConvention: fixedBusinessDay,
+                calendar: fixedCalendar
+            },
+            floatingLeg: {
+                index: floatingIndex,
+                frequency: floatingFrequency,
+                dayCount: floatingDayCount,
+                spread: floatingSpread,
+                businessDayConvention: floatingBusinessDay,
+                calendar: floatingCalendar
+            },
+            marketData: {
+                source: marketDataSource,
+                discountRate: discountRate
+            }
+        };
+
+        // If using curve file, add file data
+        if (marketDataSource === 'curve') {
+            const curveFile = document.getElementById('curveFile').files[0];
+            if (!curveFile) {
+                showError('Please select a curve file.');
+                return;
+            }
+
+            // Read the file and add its content to the request
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                requestData.marketData.curveData = e.target.result;
+                sendSwapRequest(requestData);
+            };
+            reader.onerror = function() {
+                showError('Error reading curve file.');
+            };
+            reader.readAsText(curveFile);
+        } else {
+            // Send the request immediately if not using a curve file
+            sendSwapRequest(requestData);
+        }
+    }
+
+    function sendSwapRequest(requestData) {
+        // Send the request to the API
+        fetch('/api/swaps/calculate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`Server returned ${response.status}: ${text || response.statusText}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loader
+                document.getElementById('loader').style.display = 'none';
+
+                // Process and display results
+                displayResults(data);
+
+                // Show success message
+                showSuccess('Swap calculation completed successfully.');
+
+                // Show results section
+                document.getElementById('resultsSection').style.display = 'block';
+
+                // Create charts
+                createCashflowChart(data);
+                createDiscountFactorChart(data);
+            })
+            .catch(error => {
+                console.error('API request failed:', error);
+                showError('Error: ' + error.message);
+            });
+    }
+
+    function displayResults(data) {
+        // Display valuation results
+        const valuationTableBody = document.getElementById('valuationTableBody');
+        valuationTableBody.innerHTML = '';
+
+        // Add swap NPV
+        addResultRow(valuationTableBody, 'Swap NPV', formatCurrency(data.npv), 'Net present value of the swap');
+
+        // Add fair fixed rate
+        addResultRow(valuationTableBody, 'Fair Fixed Rate', (data.fairFixedRate * 100).toFixed(4) + '%', 'Fixed rate that makes swap NPV zero');
+
+        // Add fixed leg NPV
+        addResultRow(valuationTableBody, 'Fixed Leg NPV', formatCurrency(data.fixedLegNpv), 'Present value of fixed leg payments');
+
+        // Add floating leg NPV
+        addResultRow(valuationTableBody, 'Floating Leg NPV', formatCurrency(data.floatingLegNpv), 'Present value of floating leg payments');
+
+        // Add swap duration
+        addResultRow(valuationTableBody, 'Swap Duration', data.swapDuration.toFixed(4) + ' years', 'Duration of the swap');
+
+        // Add basis point value (BPV)
+        addResultRow(valuationTableBody, 'BPV', formatCurrency(data.bpv), 'Change in NPV for 1bp change in rates');
+
+        // Display cashflows
+        displayCashflows(data);
+
+        // Display sensitivities
+        displaySensitivities(data);
+    }
+
+    function displayCashflows(data) {
+        // Display fixed leg cashflows
+        const fixedCashflowsBody = document.getElementById('fixedCashflowsBody');
+        fixedCashflowsBody.innerHTML = '';
+
+        if (data.fixedLegCashflows && data.fixedLegCashflows.length > 0) {
+            data.fixedLegCashflows.forEach(cf => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(cf.date)}</td>
+                    <td>${formatCurrency(cf.amount)}</td>
+                    <td>${formatCurrency(cf.presentValue)}</td>
+                `;
+                fixedCashflowsBody.appendChild(row);
+            });
+        }
+
+        // Display floating leg cashflows
+        const floatingCashflowsBody = document.getElementById('floatingCashflowsBody');
+        floatingCashflowsBody.innerHTML = '';
+
+        if (data.floatingLegCashflows && data.floatingLegCashflows.length > 0) {
+            data.floatingLegCashflows.forEach(cf => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${formatDate(cf.date)}</td>
+                    <td>${(cf.rate * 100).toFixed(4)}%</td>
+                    <td>${formatCurrency(cf.amount)}</td>
+                    <td>${formatCurrency(cf.presentValue)}</td>
+                `;
+                floatingCashflowsBody.appendChild(row);
+            });
+        }
+    }
+
+    function displaySensitivities(data) {
+        const sensitivitiesTableBody = document.getElementById('sensitivitiesTableBody');
+        sensitivitiesTableBody.innerHTML = '';
+
+        // Add DV01 (Dollar Value of 1 basis point)
+        addResultRow(sensitivitiesTableBody, 'DV01', formatCurrency(data.sensitivities.dv01), 'Change in NPV for 1bp parallel shift in yield curve');
+
+        // Add CR01 (Credit Risk 01)
+        addResultRow(sensitivitiesTableBody, 'CR01', formatCurrency(data.sensitivities.cr01), 'Change in NPV for 1bp shift in credit spread');
+
+        // Add IE01 (Inflation Exposure 01)
+        addResultRow(sensitivitiesTableBody, 'IE01', formatCurrency(data.sensitivities.ie01), 'Change in NPV for 1bp shift in inflation rates');
+
+        // Add gamma (second derivative of value to rates)
+        addResultRow(sensitivitiesTableBody, 'Gamma', formatCurrency(data.sensitivities.gamma), 'Second derivative of value with respect to rates');
+
+        // Add vega (sensitivity to volatility)
+        addResultRow(sensitivitiesTableBody, 'Vega', formatCurrency(data.sensitivities.vega), 'Change in NPV for 1% change in implied volatility');
+
+        // Add tenor bucket DV01s
+        if (data.sensitivities.bucketDv01) {
+            for (const [bucket, value] of Object.entries(data.sensitivities.bucketDv01)) {
+                addResultRow(sensitivitiesTableBody, `DV01 (${bucket})`, formatCurrency(value), `Change in NPV for 1bp shift in ${bucket} tenor point`);
+            }
+        }
+    }
+
+    function createCashflowChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('cashflowChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.cashflowChart) {
+            window.cashflowChart.destroy();
+        }
+
+        // Prepare data for chart
+        const fixedLegDates = data.fixedLegCashflows.map(cf => new Date(cf.date));
+        const fixedLegAmounts = data.fixedLegCashflows.map(cf => cf.amount);
+
+        const floatingLegDates = data.floatingLegCashflows.map(cf => new Date(cf.date));
+        const floatingLegAmounts = data.floatingLegCashflows.map(cf => cf.amount);
+
+        // Create the chart
+        window.cashflowChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                datasets: [
+                    {
+                        label: 'Fixed Leg',
+                        data: fixedLegDates.map((date, index) => ({
+                            x: date,
+                            y: fixedLegAmounts[index]
+                        })),
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)'
+                    },
+                    {
+                        label: 'Floating Leg',
+                        data: floatingLegDates.map((date, index) => ({
+                            x: date,
+                            y: -floatingLegAmounts[index] // Negated to show as outflows
+                        })),
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'month',
+                            tooltipFormat: 'PP',
+                            displayFormats: {
+                                month: 'MMM yyyy'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Cash Flow Amount'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Swap Cash Flows'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${formatCurrency(Math.abs(context.raw.y))}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function createDiscountFactorChart(data) {
+        // Get the chart canvas
+        const ctx = document.getElementById('discountFactorChart').getContext('2d');
+
+        // Destroy existing chart if it exists
+        if (window.discountFactorChart) {
+            window.discountFactorChart.destroy();
+        }
+
+        // Prepare data for chart
+        const dates = data.discountFactors.map(df => new Date(df.date));
+        const factors = data.discountFactors.map(df => df.factor);
+
+        // Create the chart
+        window.discountFactorChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: 'Discount Factors',
+                    data: factors,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'month',
+                            displayFormats: {
+                                month: 'MMM yyyy'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Discount Factor'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Discount Factor Curve'
+                    }
+                }
+            }
+        });
+    }
+
+    function resetForm() {
+        // Reset to default values
+        const today = new Date();
+        document.getElementById('swapType').value = 'irs';
+        document.getElementById('calculationType').value = 'npv';
+        document.getElementById('nominal').value = 10000000;
+        document.getElementById('effectiveDate').valueAsDate = today;
+
+        const maturityDay = new Date(today);
+        maturityDay.setFullYear(maturityDay.getFullYear() + 5);
+        document.getElementById('maturityDate').valueAsDate = maturityDay;
+
+        document.getElementById('fixedRate').value = 3.0;
+        document.getElementById('fixedFrequency').value = 2;
+        document.getElementById('fixedDayCount').value = '30/360';
+        document.getElementById('fixedBusinessDay').value = 'modified-following';
+        document.getElementById('fixedCalendar').value = 'us';
+        document.getElementById('floatingIndex').value = 'libor-usd-3m';
+        document.getElementById('floatingFrequency').value = 4;
+        document.getElementById('floatingDayCount').value = 'actual/360';
+        document.getElementById('floatingSpread').value = 0;
+        document.getElementById('floatingBusinessDay').value = 'modified-following';
+        document.getElementById('floatingCalendar').value = 'us';
+        document.getElementById('marketDataSource').value = 'manual';
+        document.getElementById('discountRate').value = 3.2;
+
+        // Reset market data source UI
+        document.getElementById('curveFileContainer').style.display = 'none';
+        document.getElementById('discountRateContainer').style.display = 'block';
+
+        // Hide results and messages
+        document.getElementById('resultsSection').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+    }
+
+    function showError(message) {
+        const errorElement = document.getElementById('errorMessage');
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function showSuccess(message) {
+        const successElement = document.getElementById('successMessage');
+        successElement.textContent = message;
+        successElement.style.display = 'block';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+    }
+
+    function addResultRow(tableBody, metric, value, description) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${metric}</strong></td>
+            <td>${value}</td>
+            <td>${description}</td>
+        `;
+        tableBody.appendChild(row);
+    }
+
+    function formatCurrency(value) {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+</script>
+</body>
+</html>

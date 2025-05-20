@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Option Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1, h2 {
+            color: #2c3e50;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .input-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .results-section {
+            flex: 1;
+            min-width: 300px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .chart-section {
+            width: 100%;
+            margin-top: 20px;
+            background-color: #f7f9fc;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .visualization {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        #pathChart {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<h1>Monte Carlo Option Simulator</h1>
+<p>This tool simulates asset price paths using Monte Carlo methods to price various types of options.</p>
+
+<div class="container">
+    <div class="input-section">
+        <h2>Parameters</h2>
+        <div class="form-group">
+            <label for="spotPrice">Spot Price ($)</label>
+            <input type="number" id="spotPrice" value="100" min="0.01" step="0.01">
+        </div>
+
+        <div class="form-group">
+            <label for="strikePrice">Strike Price ($)</label>
+            <input type="number" id="strikePrice" value="100" min="0.01" step="0.01">
+        </div>
+
+        <div class="form-group">
+            <label for="riskFreeRate">Risk-Free Rate (%)</label>
+            <input type="number" id="riskFreeRate" value="5" min="0" max="100" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label for="volatility">Volatility (%)</label>
+            <input type="number" id="volatility" value="20" min="0.1" max="200" step="0.1">
+        </div>
+
+        <div class="form-group">
+            <label for="timeHorizon">Time Horizon (years)</label>
+            <input type="number" id="timeHorizon" value="1" min="0.05" max="30" step="0.05">
+        </div>
+
+        <div class="form-group">
+            <label for="numPaths">Number of Paths</label>
+            <input type="number" id="numPaths" value="1000" min="100" max="100000" step="100">
+        </div>
+
+        <div class="form-group">
+            <label for="numSteps">Time Steps</label>
+            <input type="number" id="numSteps" value="252" min="10" max="1000" step="1">
+        </div>
+
+        <div class="form-group">
+            <label for="optionType">Option Type</label>
+            <select id="optionType">
+                <option value="call">Call</option>
+                <option value="put">Put</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="optionStyle">Option Style</label>
+            <select id="optionStyle">
+                <option value="european">European</option>
+                <option value="asian">Asian (Avg Price)</option>
+                <option value="upAndOut">Up-and-Out Barrier</option>
+                <option value="upAndIn">Up-and-In Barrier</option>
+                <option value="downAndOut">Down-and-Out Barrier</option>
+                <option value="downAndIn">Down-and-In Barrier</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="barrierGroup" style="display: none;">
+            <label for="barrierLevel">Barrier Level ($)</label>
+            <input type="number" id="barrierLevel" value="120" min="0.01" step="0.01">
+        </div>
+
+        <button id="runSimulation">Run Simulation</button>
+    </div>
+
+    <div class="results-section">
+        <h2>Results</h2>
+        <div id="resultsContainer">
+            <p>Run a simulation to see results.</p>
+        </div>
+    </div>
+</div>
+
+<div class="chart-section">
+    <h2>Price Path Visualization</h2>
+    <p>Displaying a sample of simulated price paths.</p>
+    <div class="visualization">
+        <canvas id="pathChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // DOM elements
+    const spotPriceInput = document.getElementById('spotPrice');
+    const strikePriceInput = document.getElementById('strikePrice');
+    const riskFreeRateInput = document.getElementById('riskFreeRate');
+    const volatilityInput = document.getElementById('volatility');
+    const timeHorizonInput = document.getElementById('timeHorizon');
+    const numPathsInput = document.getElementById('numPaths');
+    const numStepsInput = document.getElementById('numSteps');
+    const optionTypeSelect = document.getElementById('optionType');
+    const optionStyleSelect = document.getElementById('optionStyle');
+    const barrierLevelInput = document.getElementById('barrierLevel');
+    const barrierGroup = document.getElementById('barrierGroup');
+    const runButton = document.getElementById('runSimulation');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    // Chart
+    let pathChart = null;
+
+    // Show/hide barrier input based on option style
+    optionStyleSelect.addEventListener('change', () => {
+        const style = optionStyleSelect.value;
+        if (style.includes('And')) {
+            barrierGroup.style.display = 'block';
+        } else {
+            barrierGroup.style.display = 'none';
+        }
+    });
+
+    // Monte Carlo Option Pricing Class
+    class MonteCarloPricer {
+        constructor(numPaths, numSteps, timeHorizon) {
+            this.numPaths = numPaths;
+            this.numSteps = numSteps;
+            this.timeHorizon = timeHorizon;
+            this.dt = timeHorizon / numSteps;
+        }
+
+        // Generate a random sample from standard normal distribution using Box-Muller transform
+        normalRandom() {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        // Simulate a single asset price path using Geometric Brownian Motion
+        simulateAssetPath(spotPrice, riskFreeRate, volatility) {
+            const path = [spotPrice];
+            let currentPrice = spotPrice;
+
+            for (let i = 0; i < this.numSteps; i++) {
+                const z = this.normalRandom();
+
+                // Geometric Brownian Motion
+                const drift = (riskFreeRate / 100 - 0.5 * Math.pow(volatility / 100, 2)) * this.dt;
+                const diffusion = (volatility / 100) * Math.sqrt(this.dt) * z;
+
+                currentPrice *= Math.exp(drift + diffusion);
+                path.push(currentPrice);
+            }
+
+            return path;
+        }
+
+        // Price European option
+        priceEuropeanOption(spotPrice, strikePrice, riskFreeRate, volatility, isCall) {
+            let sumPayoffs = 0;
+            const paths = [];
+
+            for (let i = 0; i < this.numPaths; i++) {
+                const path = this.simulateAssetPath(spotPrice, riskFreeRate, volatility);
+                if (i < 10) paths.push(path); // Store sample paths for visualization
+
+                const finalSpot = path[path.length - 1];
+                const payoff = isCall ? Math.max(finalSpot - strikePrice, 0) :
+                    Math.max(strikePrice - finalSpot, 0);
+                sumPayoffs += payoff;
+            }
+
+            // Average payoff discounted to present value
+            const price = Math.exp(-riskFreeRate / 100 * this.timeHorizon) * (sumPayoffs / this.numPaths);
+            return { price, paths };
+        }
+
+        // Price Asian option
+        priceAsianOption(spotPrice, strikePrice, riskFreeRate, volatility, isCall) {
+            let sumPayoffs = 0;
+            const paths = [];
+
+            for (let i = 0; i < this.numPaths; i++) {
+                const path = this.simulateAssetPath(spotPrice, riskFreeRate, volatility);
+                if (i < 10) paths.push(path); // Store sample paths for visualization
+
+                // Calculate average price along the path
+                const avgPrice = path.reduce((sum, price) => sum + price, 0) / path.length;
+
+                const payoff = isCall ? Math.max(avgPrice - strikePrice, 0) :
+                    Math.max(strikePrice - avgPrice, 0);
+                sumPayoffs += payoff;
+            }
+
+            // Average payoff discounted to present value
+            const price = Math.exp(-riskFreeRate / 100 * this.timeHorizon) * (sumPayoffs / this.numPaths);
+            return { price, paths };
+        }
+
+        // Price Barrier option
+        priceBarrierOption(spotPrice, strikePrice, barrierLevel, riskFreeRate, volatility, isCall, barrierType) {
+            let sumPayoffs = 0;
+            const paths = [];
+
+            for (let i = 0; i < this.numPaths; i++) {
+                const path = this.simulateAssetPath(spotPrice, riskFreeRate, volatility);
+                if (i < 10) paths.push(path); // Store sample paths for visualization
+
+                let barrierHit = false;
+
+                // Check if barrier is hit
+                for (const price of path) {
+                    if ((barrierType === 'upAndOut' || barrierType === 'upAndIn') && price >= barrierLevel) {
+                        barrierHit = true;
+                        break;
+                    }
+                    else if ((barrierType === 'downAndOut' || barrierType === 'downAndIn') && price <= barrierLevel) {
+                        barrierHit = true;
+                        break;
+                    }
+                }
+
+                let payoff = 0;
+                const finalSpot = path[path.length - 1];
+
+                // Calculate payoff based on barrier type
+                if ((barrierType === 'upAndIn' || barrierType === 'downAndIn') && barrierHit) {
+                    payoff = isCall ? Math.max(finalSpot - strikePrice, 0) :
+                        Math.max(strikePrice - finalSpot, 0);
+                }
+                else if ((barrierType === 'upAndOut' || barrierType === 'downAndOut') && !barrierHit) {
+                    payoff = isCall ? Math.max(finalSpot - strikePrice, 0) :
+                        Math.max(strikePrice - finalSpot, 0);
+                }
+
+                sumPayoffs += payoff;
+            }
+
+            // Average payoff discounted to present value
+            const price = Math.exp(-riskFreeRate / 100 * this.timeHorizon) * (sumPayoffs / this.numPaths);
+            return { price, paths };
+        }
+
+        // Black-Scholes formula for comparison
+        blackScholesPrice(S, K, r, sigma, T, isCall) {
+            r = r / 100;
+            sigma = sigma / 100;
+
+            const d1 = (Math.log(S / K) + (r + sigma * sigma / 2) * T) / (sigma * Math.sqrt(T));
+            const d2 = d1 - sigma * Math.sqrt(T);
+
+            const Nd1 = this.normalCDF(d1);
+            const Nd2 = this.normalCDF(d2);
+
+            if (isCall) {
+                return S * Nd1 - K * Math.exp(-r * T) * Nd2;
+            } else {
+                return K * Math.exp(-r * T) * (1 - Nd2) - S * (1 - Nd1);
+            }
+        }
+
+        // Cumulative distribution function for standard normal
+        normalCDF(x) {
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+            const p = 0.3275911;
+
+            const sign = x < 0 ? -1 : 1;
+            x = Math.abs(x) / Math.sqrt(2);
+
+            const t = 1.0 / (1.0 + p * x);
+            const y = 1.0 - ((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+
+            return 0.5 * (1.0 + sign * y);
+        }
+    }
+
+    // Run simulation
+    runButton.addEventListener('click', () => {
+        // Get parameters
+        const spotPrice = parseFloat(spotPriceInput.value);
+        const strikePrice = parseFloat(strikePriceInput.value);
+        const riskFreeRate = parseFloat(riskFreeRateInput.value);
+        const volatility = parseFloat(volatilityInput.value);
+        const timeHorizon = parseFloat(timeHorizonInput.value);
+        const numPaths = parseInt(numPathsInput.value);
+        const numSteps = parseInt(numStepsInput.value);
+        const isCall = optionTypeSelect.value === 'call';
+        const optionStyle = optionStyleSelect.value;
+        const barrierLevel = parseFloat(barrierLevelInput.value);
+
+        // Create Monte Carlo pricer
+        const mc = new MonteCarloPricer(numPaths, numSteps, timeHorizon);
+
+        // Price option based on style
+        let result;
+        let bsPrice = null;
+
+        if (optionStyle === 'european') {
+            result = mc.priceEuropeanOption(spotPrice, strikePrice, riskFreeRate, volatility, isCall);
+            bsPrice = mc.blackScholesPrice(spotPrice, strikePrice, riskFreeRate, volatility, timeHorizon, isCall);
+        } else if (optionStyle === 'asian') {
+            result = mc.priceAsianOption(spotPrice, strikePrice, riskFreeRate, volatility, isCall);
+        } else {
+            // Barrier option
+            result = mc.priceBarrierOption(spotPrice, strikePrice, barrierLevel, riskFreeRate, volatility, isCall, optionStyle);
+        }
+
+        // Display results
+        displayResults(result.price, bsPrice, optionStyle, isCall);
+
+        // Visualize paths
+        visualizePaths(result.paths, timeHorizon, numSteps);
+    });
+
+    // Display results in the results section
+    function displayResults(mcPrice, bsPrice, optionStyle, isCall) {
+        const optionTypeText = isCall ? 'Call' : 'Put';
+
+        let resultsHTML = `
+                <h3>${formatOptionStyle(optionStyle)} ${optionTypeText} Option Price</h3>
+                <table>
+                    <tr>
+                        <th>Method</th>
+                        <th>Price</th>
+                    </tr>
+                    <tr>
+                        <td>Monte Carlo</td>
+                        <td>$${mcPrice.toFixed(4)}</td>
+                    </tr>
+            `;
+
+        if (bsPrice !== null) {
+            const difference = Math.abs(mcPrice - bsPrice);
+            resultsHTML += `
+                    <tr>
+                        <td>Black-Scholes</td>
+                        <td>$${bsPrice.toFixed(4)}</td>
+                    </tr>
+                    <tr>
+                        <td>Difference</td>
+                        <td>$${difference.toFixed(4)}</td>
+                    </tr>
+                `;
+        }
+
+        resultsHTML += `</table>`;
+
+        if (optionStyle === 'asian') {
+            resultsHTML += `
+                    <p><em>Note: Asian options are typically cheaper than their European counterparts
+                    due to averaging of price, which reduces volatility exposure.</em></p>
+                `;
+        } else if (optionStyle.includes('And')) {
+            resultsHTML += `
+                    <p><em>Note: The sum of up-and-in and up-and-out (or down-and-in and down-and-out)
+                    prices for the same barrier should equal the European option price.</em></p>
+                `;
+        }
+
+        resultsContainer.innerHTML = resultsHTML;
+    }
+
+    // Format option style text
+    function formatOptionStyle(style) {
+        switch (style) {
+            case 'european': return 'European';
+            case 'asian': return 'Asian (Avg Price)';
+            case 'upAndOut': return 'Up-and-Out Barrier';
+            case 'upAndIn': return 'Up-and-In Barrier';
+            case 'downAndOut': return 'Down-and-Out Barrier';
+            case 'downAndIn': return 'Down-and-In Barrier';
+            default: return style;
+        }
+    }
+
+    // Visualize price paths
+    function visualizePaths(paths, timeHorizon, numSteps) {
+        const ctx = document.getElementById('pathChart').getContext('2d');
+
+        // Generate time points
+        const timePoints = Array.from({length: numSteps + 1}, (_, i) => i * timeHorizon / numSteps);
+
+        // Prepare datasets
+        const datasets = paths.map((path, index) => {
+            const color = getRandomColor(index);
+            return {
+                label: `Path ${index + 1}`,
+                data: path.map((price, i) => ({x: timePoints[i], y: price})),
+                borderColor: color,
+                backgroundColor: 'transparent',
+                borderWidth: 1.5,
+                pointRadius: 0,
+            };
+        });
+
+        // Destroy previous chart if exists
+        if (pathChart) {
+            pathChart.destroy();
+        }
+
+        // Create new chart
+        pathChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Sample Price Paths'
+                    },
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return `Time: ${context[0].parsed.x.toFixed(2)} years`;
+                            },
+                            label: function(context) {
+                                return `Price: $${context.parsed.y.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Time (years)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Price ($)'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Generate random color for path
+    function getRandomColor(index) {
+        const colors = [
+            '#3498db', '#e74c3c', '#2ecc71', '#f39c12', '#9b59b6',
+            '#1abc9c', '#d35400', '#34495e', '#16a085', '#c0392b'
+        ];
+
+        return colors[index % colors.length];
+    }
+
+    // Run a simulation on page load with default values
+    window.addEventListener('load', () => {
+        runButton.click();
+    });
+</script>
+</body>
+</html>

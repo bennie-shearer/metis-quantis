@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuantLib Bond Calculator</title>
+    <style>
+        /* Global and basic styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f7f9fc;
+            padding: 0 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        h2 {
+            color: #34495e;
+            margin: 15px 0;
+            font-size: 22px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+        }
+        
+        h3 {
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+        
+        /* Navigation */
+        .tool-nav {
+            display: flex;
+            flex-wrap: wrap;
+            margin-bottom: 25px;
+            background-color: #f1f1f1;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        
+        .tool-link {
+            padding: 12px 18px;
+            text-decoration: none;
+            color: #555;
+            font-weight: 500;
+            transition: background-color 0.2s, color 0.2s;
+            border-right: 1px solid #ddd;
+        }
+        
+        .tool-link:hover {
+            background-color: #e0e0e0;
+            color: #222;
+        }
+        
+        .tool-link.active {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        /* Form layout */
+        .parameter-section {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .col-md-6 {
+            flex: 0 0 50%;
+            max-width: 50%;
+            padding: 0 10px;
+        }
+        
+        .col-sm-12 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            font-size: 16px;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .form-control:focus {
+            border-color: #3498db;
+            outline: 0;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.25);
+        }
+        
+        select.form-control {
+            cursor: pointer;
+        }
+        
+        /* Buttons */
+        .text-center {
+            text-align: center;
+            margin: 25px 0;
+        }
+        
+        .btn {
+            display: inline-block;
+            font-weight: 500;
+            color: #212529;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            user-select: none;
+            background-color: #f8f9fa;
+            border: 1px solid #f8f9fa;
+            padding: 10px 20px;
+            font-size: 16px;
+            line-height: 1.5;
+            border-radius: 5px;
+            margin: 0 5px;
+            transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .btn-primary {
+            color: #fff;
+            background-color: #3498db;
+            border-color: #3498db;
+        }
+        
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        
+        .btn:hover {
+            background-color: #e2e6ea;
+            border-color: #dae0e5;
+        }
+        
+        /* Messages */
+        .error-message {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .success-message {
+            display: none;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #c3e6cb;
+        }
+        
+        /* Debug information */
+        .debug-info {
+            display: none;
+            background-color: #d1ecf1;
+            color: #0c5460;
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #bee5eb;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        /* Loader */
+        .loader {
+            display: none;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Results Section */
+        .results-section {
+            display: none;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-top: 25px;
+            margin-bottom: 30px;
+        }
+        
+        /* Tab Navigation */
+        .tab-container {
+            margin-top: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 20px;
+        }
+        
+        .tab-button {
+            padding: 10px 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #777;
+            font-weight: 500;
+            transition: color 0.2s, border-bottom 0.2s;
+            margin-right: 10px;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button:hover {
+            color: #333;
+        }
+        
+        .tab-button.active {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Tables */
+        .table {
+            width: 100%;
+            margin-bottom: 20px;
+            border-collapse: collapse;
+        }
+        
+        .table th,
+        .table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #444;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 20px;
+        }
+        
+        /* Chart styling */
+        .chart-container {
+            height: 400px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        /* SVG Chart styling */
+        .svg-chart {
+            width: 100%;
+            height: 100%;
+            overflow: visible;
+        }
+        
+        .svg-chart .axis {
+            font-size: 12px;
+        }
+        
+        .svg-chart .axis line,
+        .svg-chart .axis path {
+            stroke: #ccc;
+        }
+        
+        .svg-chart .data-line {
+            fill: none;
+            stroke: #3498db;
+            stroke-width: 2;
+        }
+        
+        .svg-chart .data-point {
+            fill: #3498db;
+        }
+        
+        .svg-chart .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+        }
+        
+        /* Custom chart styles */
+        .html-chart {
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .x-axis {
+            position: absolute;
+            bottom: 20px;
+            left: 60px;
+            right: 30px;
+            height: 1px;
+            background-color: #aaa;
+        }
+        
+        .y-axis {
+            position: absolute;
+            top: 45px;
+            bottom: 40px;
+            left: 60px;
+            width: 1px;
+            background-color: #aaa;
+        }
+        
+        .x-labels {
+            position: absolute;
+            left: 60px;
+            right: 30px;
+            bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .x-label {
+            font-size: 12px;
+            transform: translateX(-50%);
+            color: #666;
+        }
+        
+        .y-labels {
+            position: absolute;
+            top: 45px;
+            bottom: 40px;
+            left: 5px;
+            width: 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .y-label {
+            font-size: 12px;
+            text-align: right;
+            color: #666;
+        }
+        
+        .plot-area {
+            position: absolute;
+            top: 45px;
+            bottom: 40px;
+            left: 60px;
+            right: 30px;
+        }
+        
+        .chart-point {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background-color: #3498db;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .chart-line {
+            position: absolute;
+            background-color: #3498db;
+            height: 2px;
+            transform-origin: 0 50%;
+        }
+        
+        .axis-title {
+            position: absolute;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .x-axis-title {
+            bottom: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+        }
+        
+        .y-axis-title {
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            transform-origin: left center;
+        }
+        
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            .col-md-6 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+            
+            .tool-link {
+                flex: 1 0 auto;
+                text-align: center;
+                padding: 8px 10px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QuantLib Bond Calculator</h1>
+        
+        <div class="tool-nav">
+            <a href="index.html" class="tool-link">Home</a>
+            <a href="bond-calculator.html" class="tool-link active">Bond Calculator</a>
+            <a href="option-calculator.html" class="tool-link">Option Calculator</a>
+            <a href="swap-calculator.html" class="tool-link">Swap Calculator</a>
+            <a href="yield-curve-builder.html" class="tool-link">Yield Curve</a>
+        </div>
+        
+        <div class="parameter-section">
+            <h2>Bond Type</h2>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="bondType">Bond Type</label>
+                        <select id="bondType" class="form-control">
+                            <option value="fixed-rate">Fixed Rate Bond</option>
+                            <option value="zero-coupon">Zero Coupon Bond</option>
+                            <option value="floating-rate">Floating Rate Bond</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="calculationType">Calculation Type</label>
+                        <select id="calculationType" class="form-control">
+                            <option value="price">Price from Yield</option>
+                            <option value="yield">Yield from Price</option>
+                            <option value="both">Both</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="parameter-section">
+            <h2>Bond Parameters</h2>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="faceValue">Face Value</label>
+                        <input type="number" id="faceValue" class="form-control" value="100" min="0" step="1">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="couponRate">Coupon Rate (%)</label>
+                        <input type="number" id="couponRate" class="form-control" value="5.0" min="0" step="0.1">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="issueDate">Issue Date</label>
+                        <input type="date" id="issueDate" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="maturityDate">Maturity Date</label>
+                        <input type="date" id="maturityDate" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="marketPrice">Market Price</label>
+                        <input type="number" id="marketPrice" class="form-control" value="100.0" min="0" step="0.01">
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="yieldRate">Yield Rate (%)</label>
+                        <input type="number" id="yieldRate" class="form-control" value="5.0" min="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="couponFrequency">Coupon Frequency</label>
+                        <select id="couponFrequency" class="form-control">
+                            <option value="1">Annual</option>
+                            <option value="2" selected>Semi-Annual</option>
+                            <option value="4">Quarterly</option>
+                            <option value="12">Monthly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="dayCount">Day Count Convention</label>
+                        <select id="dayCount" class="form-control">
+                            <option value="30/360" selected>30/360</option>
+                            <option value="actual/360">Actual/360</option>
+                            <option value="actual/365">Actual/365</option>
+                            <option value="actual/actual">Actual/Actual</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="businessDayConvention">Business Day Convention</label>
+                        <select id="businessDayConvention" class="form-control">
+                            <option value="following">Following</option>
+                            <option value="modified-following" selected>Modified Following</option>
+                            <option value="preceding">Preceding</option>
+                            <option value="unadjusted">Unadjusted</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 col-sm-12">
+                    <div class="form-group">
+                        <label class="form-label" for="settlement">Settlement Days</label>
+                        <input type="number" id="settlement" class="form-control" value="2" min="0" step="1">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <button id="calculateButton" class="btn btn-primary">Calculate Bond</button>
+            <button id="resetButton" class="btn">Reset</button>
+        </div>
+
+        <div id="debugInfo" class="debug-info"></div>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+        <div id="loader" class="loader"></div>
+
+        <div id="resultsSection" class="results-section">
+            <h2>Results</h2>
+
+            <div class="tab-container">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="resultsTable">Valuation</button>
+                    <button class="tab-button" data-tab="cashflowsTable">Cashflows</button>
+                    <button class="tab-button" data-tab="yieldCurve">Yield Curve</button>
+                    <button class="tab-button" data-tab="sensitivities">Sensitivities</button>
+                </div>
+
+                <div class="tab-content active" id="resultsTable">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody id="resultsTableBody">
+                        <!-- Results will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="tab-content" id="cashflowsTable">
+                    <h3>Bond Cashflows</h3>
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Amount</th>
+                                <th>Present Value</th>
+                            </tr>
+                            </thead>
+                            <tbody id="cashflowsBody">
+                            <!-- Cashflows will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="yieldCurve">
+                    <div class="chart-container" id="yieldChartContainer">
+                        <!-- Chart will be created here -->
+                    </div>
+                </div>
+
+                <div class="tab-content" id="sensitivities">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody id="sensitivitiesBody">
+                        <!-- Sensitivities will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * Utility functions
+         */
+        
+        // Debug mode
+        const DEBUG_MODE = true;
+        
+        // Log debug information
+        function debug(message, data) {
+            if (DEBUG_MODE) {
+                if (data) {
+                    console.log(`[DEBUG] ${message}`, data);
+                } else {
+                    console.log(`[DEBUG] ${message}`);
+                }
+            }
+        }
+        
+        // Display debug information in the UI
+        function showDebugInfo(message) {
+            if (DEBUG_MODE) {
+                const debugElement = document.getElementById('debugInfo');
+                if (debugElement) {
+                    debugElement.style.display = 'block';
+                    debugElement.textContent += message + '\n';
+                }
+            }
+        }
+        
+        // Clear debug information
+        function clearDebugInfo() {
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement) {
+                debugElement.textContent = '';
+            }
+        }
+        
+        // Show error message
+        function showError(message) {
+            debug(`Error: ${message}`);
+            const errorElement = document.getElementById('errorMessage');
+            const successElement = document.getElementById('successMessage');
+            const loaderElement = document.getElementById('loader');
+            
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+            
+            if (successElement) {
+                successElement.style.display = 'none';
+            }
+            
+            if (loaderElement) {
+                loaderElement.style.display = 'none';
+            }
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            debug(`Success: ${message}`);
+            const successElement = document.getElementById('successMessage');
+            const errorElement = document.getElementById('errorMessage');
+            const loaderElement = document.getElementById('loader');
+            
+            if (successElement) {
+                successElement.textContent = message;
+                successElement.style.display = 'block';
+            }
+            
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+            
+            if (loaderElement) {
+                loaderElement.style.display = 'none';
+            }
+        }
+        
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+        
+        // Format date
+        function formatDate(dateString) {
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                debug('Error formatting date:', e);
+                return dateString;
+            }
+        }
+        
+        // Get element safely
+        function getElement(id) {
+            const element = document.getElementById(id);
+            if (!element) {
+                debug(`Element not found: ${id}`);
+            }
+            return element;
+        }
+        
+        // Get form value safely
+        function getFormValue(id, defaultValue = '') {
+            const element = getElement(id);
+            return element ? element.value : defaultValue;
+        }
+        
+        // Get numeric form value safely
+        function getNumericValue(id, defaultValue = 0) {
+            const value = parseFloat(getFormValue(id));
+            return isNaN(value) ? defaultValue : value;
+        }
+        
+        // Set form value safely
+        function setFormValue(id, value) {
+            const element = getElement(id);
+            if (element) {
+                element.value = value;
+            }
+        }
+        
+        // Calculate days between two dates
+        function daysBetween(date1, date2) {
+            const d1 = new Date(date1);
+            const d2 = new Date(date2);
+            const diffTime = Math.abs(d2 - d1);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        // Calculate years between two dates
+        function yearsBetween(date1, date2) {
+            return daysBetween(date1, date2) / 365;
+        }
+        
+        // Get environment information
+        function getEnvironmentInfo() {
+            return {
+                userAgent: navigator.userAgent,
+                dateInputSupported: document.createElement('input').type === 'date',
+                windowDimensions: {
+                    width: window.innerWidth,
+                    height: window.innerHeight
+                },
+                devicePixelRatio: window.devicePixelRatio,
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                language: navigator.language,
+                dateTimeString: new Date().toString()
+            };
+        }
+        
+        // Add a table row to results
+        function addResultRow(tableBody, metric, value, description) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><strong>${metric}</strong></td>
+                <td>${value}</td>
+                <td>${description}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+        
+        /**
+         * Bond calculation functions
+         */
+        
+        // Simple bond price calculation
+        function calculateBondPrice(faceValue, couponRate, yieldRate, timeToMaturity, couponFrequency) {
+            // Handle zero-coupon bonds
+            if (couponRate === 0) {
+                return faceValue / Math.pow(1 + yieldRate / couponFrequency, timeToMaturity * couponFrequency);
+            }
+            
+            // Regular bond
+            let price = 0;
+            const couponPayment = faceValue * couponRate / couponFrequency;
+            
+            for (let i = 1; i <= timeToMaturity * couponFrequency; i++) {
+                price += couponPayment / Math.pow(1 + yieldRate / couponFrequency, i);
+            }
+            
+            price += faceValue / Math.pow(1 + yieldRate / couponFrequency, timeToMaturity * couponFrequency);
+            return price;
+        }
+        
+        // Calculate bond duration
+        function calculateBondDuration(faceValue, couponRate, yieldRate, timeToMaturity, couponFrequency) {
+            // Handle zero-coupon bonds
+            if (couponRate === 0) {
+                return timeToMaturity;
+            }
+            
+            // Regular bond
+            const couponPayment = faceValue * couponRate / couponFrequency;
+            let weightedTime = 0;
+            let sumPv = 0;
+            
+            for (let i = 1; i <= timeToMaturity * couponFrequency; i++) {
+                const t = i / couponFrequency;
+                const pv = couponPayment / Math.pow(1 + yieldRate / couponFrequency, i);
+                weightedTime += t * pv;
+                sumPv += pv;
+            }
+            
+            // Add principal
+            const principalPv = faceValue / Math.pow(1 + yieldRate / couponFrequency, timeToMaturity * couponFrequency);
+            weightedTime += timeToMaturity * principalPv;
+            sumPv += principalPv;
+            
+            // Macaulay duration
+            const macaulayDuration = weightedTime / sumPv;
+            
+            // Modified duration
+            return macaulayDuration / (1 + yieldRate / couponFrequency);
+        }
+        
+        // Calculate bond convexity
+        function calculateBondConvexity(faceValue, couponRate, yieldRate, timeToMaturity, couponFrequency) {
+            // Handle zero-coupon bonds
+            if (couponRate === 0) {
+                return timeToMaturity * (1 + timeToMaturity) / Math.pow(1 + yieldRate, 2);
+            }
+            
+            // Regular bond
+            const couponPayment = faceValue * couponRate / couponFrequency;
+            let weightedTimeSquared = 0;
+            let sumPv = 0;
+            
+            for (let i = 1; i <= timeToMaturity * couponFrequency; i++) {
+                const t = i / couponFrequency;
+                const pv = couponPayment / Math.pow(1 + yieldRate / couponFrequency, i);
+                weightedTimeSquared += t * (t + 1) * pv;
+                sumPv += pv;
+            }
+            
+            // Add principal
+            const principalPv = faceValue / Math.pow(1 + yieldRate / couponFrequency, timeToMaturity * couponFrequency);
+            weightedTimeSquared += timeToMaturity * (timeToMaturity + 1) * principalPv;
+            sumPv += principalPv;
+            
+            return weightedTimeSquared / (sumPv * Math.pow(1 + yieldRate / couponFrequency, 2));
+        }
+        
+        // Generate cashflows
+        function generateCashflows(faceValue, couponRate, yieldRate, timeToMaturity, couponFrequency, issueDate) {
+            const cashflows = [];
+            
+            // Skip if zero-coupon bond
+            if (couponRate > 0) {
+                const couponPayment = faceValue * couponRate / couponFrequency;
+                const periodInMonths = 12 / couponFrequency;
+                
+                for (let i = 1; i <= timeToMaturity * couponFrequency; i++) {
+                    const paymentDate = new Date(issueDate);
+                    paymentDate.setMonth(paymentDate.getMonth() + i * periodInMonths);
+                    
+                    const timeToCoupon = i / couponFrequency;
+                    const pv = couponPayment / Math.pow(1 + yieldRate / couponFrequency, i);
+                    
+                    cashflows.push({
+                        date: paymentDate.toISOString().split('T')[0],
+                        type: 'Coupon',
+                        amount: couponPayment,
+                        presentValue: pv
+                    });
+                }
+            }
+            
+            // Add principal payment
+            const maturityDate = new Date(issueDate);
+            maturityDate.setFullYear(maturityDate.getFullYear() + timeToMaturity);
+            
+            const principalPv = faceValue / Math.pow(1 + yieldRate / couponFrequency, timeToMaturity * couponFrequency);
+            
+            cashflows.push({
+                date: maturityDate.toISOString().split('T')[0],
+                type: 'Principal',
+                amount: faceValue,
+                presentValue: principalPv
+            });
+            
+            return cashflows;
+        }
+        
+        // Generate yield curve points
+        function generateYieldCurve(faceValue, couponRate, timeToMaturity, couponFrequency, currentYield) {
+            const yieldCurve = [];
+            const baseYield = currentYield;
+            const points = 20;
+            
+            for (let i = 0; i <= points; i++) {
+                const yield = baseYield * 0.5 + (baseYield * i) / points;
+                const price = calculateBondPrice(faceValue, couponRate, yield, timeToMaturity, couponFrequency);
+                
+                yieldCurve.push({
+                    yield: yield, 
+                    price: price
+                });
+            }
+            
+            return yieldCurve;
+        }
+        
+        /**
+         * Chart creation functions
+         */
+        
+        // Create pure HTML/CSS chart
+        function createHTMLChart(data, containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                debug('Chart container not found:', containerId);
+                return;
+            }
+            
+            // Clear container
+            container.innerHTML = '';
+            
+            // Create HTML chart
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'html-chart';
+            
+            // Add chart title
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'chart-title';
+            titleDiv.textContent = 'Bond Price vs Yield';
+            chartDiv.appendChild(titleDiv);
+            
+            // Extract data for chart
+            const yields = data.yieldCurve.map(point => point.yield * 100); // Convert to percentage
+            const prices = data.yieldCurve.map(point => point.price);
+            
+            // Find min and max values for axes
+            const minYield = Math.min(...yields);
+            const maxYield = Math.max(...yields);
+            const minPrice = Math.min(...prices);
+            const maxPrice = Math.max(...prices);
+            
+            // Create axes
+            const xAxis = document.createElement('div');
+            xAxis.className = 'x-axis';
+            chartDiv.appendChild(xAxis);
+            
+            const yAxis = document.createElement('div');
+            yAxis.className = 'y-axis';
+            chartDiv.appendChild(yAxis);
+            
+            // Create plot area
+            const plotArea = document.createElement('div');
+            plotArea.className = 'plot-area';
+            chartDiv.appendChild(plotArea);
+            
+            // Create x labels
+            const xLabels = document.createElement('div');
+            xLabels.className = 'x-labels';
+            
+            // Add x labels (5 evenly distributed)
+            const xLabelCount = 5;
+            for (let i = 0; i < xLabelCount; i++) {
+                const value = minYield + (maxYield - minYield) * (i / (xLabelCount - 1));
+                const label = document.createElement('div');
+                label.className = 'x-label';
+                label.textContent = value.toFixed(1) + '%';
+                label.style.left = (i * 100 / (xLabelCount - 1)) + '%';
+                xLabels.appendChild(label);
+            }
+            chartDiv.appendChild(xLabels);
+            
+            // Create y labels
+            const yLabels = document.createElement('div');
+            yLabels.className = 'y-labels';
+            
+            // Add y labels (5 evenly distributed)
+            const yLabelCount = 5;
+            for (let i = 0; i < yLabelCount; i++) {
+                const value = maxPrice - (maxPrice - minPrice) * (i / (yLabelCount - 1));
+                const label = document.createElement('div');
+                label.className = 'y-label';
+                label.textContent = value.toFixed(2);
+                yLabels.appendChild(label);
+            }
+            chartDiv.appendChild(yLabels);
+            
+            // Add axis titles
+            const xAxisTitle = document.createElement('div');
+            xAxisTitle.className = 'axis-title x-axis-title';
+            xAxisTitle.textContent = 'Yield (%)';
+            chartDiv.appendChild(xAxisTitle);
+            
+            const yAxisTitle = document.createElement('div');
+            yAxisTitle.className = 'axis-title y-axis-title';
+            yAxisTitle.textContent = 'Price';
+            chartDiv.appendChild(yAxisTitle);
+            
+            // Plot data points and lines
+            for (let i = 0; i < data.yieldCurve.length; i++) {
+                const point = data.yieldCurve[i];
+                const yieldPct = point.yield * 100;
+                const price = point.price;
+                
+                // Calculate position as percentage of plot area
+                const xPos = ((yieldPct - minYield) / (maxYield - minYield)) * 100;
+                const yPos = 100 - ((price - minPrice) / (maxPrice - minPrice)) * 100;
+                
+                // Create point element
+                const pointElem = document.createElement('div');
+                pointElem.className = 'chart-point';
+                pointElem.style.left = xPos + '%';
+                pointElem.style.top = yPos + '%';
+                plotArea.appendChild(pointElem);
+                
+                // Create line to next point (if not last point)
+                if (i < data.yieldCurve.length - 1) {
+                    const nextPoint = data.yieldCurve[i + 1];
+                    const nextYieldPct = nextPoint.yield * 100;
+                    const nextPrice = nextPoint.price;
+                    
+                    const nextXPos = ((nextYieldPct - minYield) / (maxYield - minYield)) * 100;
+                    const nextYPos = 100 - ((nextPrice - minPrice) / (maxPrice - minPrice)) * 100;
+                    
+                    // Calculate line properties
+                    const length = Math.sqrt(Math.pow(nextXPos - xPos, 2) + Math.pow(nextYPos - yPos, 2));
+                    const angle = Math.atan2(nextYPos - yPos, nextXPos - xPos) * (180 / Math.PI);
+                    
+                    const lineElem = document.createElement('div');
+                    lineElem.className = 'chart-line';
+                    lineElem.style.left = xPos + '%';
+                    lineElem.style.top = yPos + '%';
+                    lineElem.style.width = length + '%';
+                    lineElem.style.transform = `rotate(${angle}deg)`;
+                    plotArea.appendChild(lineElem);
+                }
+            }
+            
+            // Add chart to container
+            container.appendChild(chartDiv);
+        }
+        
+        /**
+         * Application logic functions
+         */
+        
+        // Calculate bond
+        function calculateBond() {
+            // Clear previous debug info
+            clearDebugInfo();
+            
+            // Show environment debug info
+            if (DEBUG_MODE) {
+                showDebugInfo('Environment Info: ' + JSON.stringify(getEnvironmentInfo(), null, 2));
+            }
+            
+            // Hide any previous messages and show loader
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+            document.getElementById('loader').style.display = 'block';
+            
+            // Get form values
+            const bondType = getFormValue('bondType', 'fixed-rate');
+            const calculationType = getFormValue('calculationType', 'price');
+            const faceValue = getNumericValue('faceValue', 100);
+            const couponRate = getNumericValue('couponRate', 5.0) / 100; // Convert to decimal
+            const issueDate = getFormValue('issueDate');
+            const maturityDate = getFormValue('maturityDate');
+            const marketPrice = getNumericValue('marketPrice', 100.0);
+            const yieldRate = getNumericValue('yieldRate', 5.0) / 100; // Convert to decimal
+            const couponFrequency = getNumericValue('couponFrequency', 2);
+            const dayCount = getFormValue('dayCount', '30/360');
+            const businessDayConvention = getFormValue('businessDayConvention', 'modified-following');
+            const settlement = getNumericValue('settlement', 2);
+            
+            // Debug input values
+            debug('Input values:', {
+                bondType, calculationType, faceValue, couponRate, issueDate, maturityDate,
+                marketPrice, yieldRate, couponFrequency, dayCount, businessDayConvention, settlement
+            });
+            
+            // Validate inputs
+            if (!issueDate || !maturityDate) {
+                showError('Issue date and maturity date are required.');
+                return;
+            }
+            
+            if (new Date(issueDate) >= new Date(maturityDate)) {
+                showError('Maturity date must be after issue date.');
+                return;
+            }
+            
+            if (isNaN(faceValue) || faceValue <= 0) {
+                showError('Face value must be a positive number.');
+                return;
+            }
+            
+            try {
+                // Calculate time to maturity
+                const timeToMaturity = yearsBetween(issueDate, maturityDate);
+                debug('Time to maturity (years):', timeToMaturity);
+                
+                // Calculate bond metrics
+                let cleanPrice, yieldToMaturity;
+                
+                if (calculationType === 'price' || calculationType === 'both') {
+                    // Calculate price from yield
+                    cleanPrice = calculateBondPrice(faceValue, couponRate, yieldRate, timeToMaturity, couponFrequency);
+                    yieldToMaturity = yieldRate;
+                } else {
+                    // Calculate yield from price
+                    cleanPrice = marketPrice;
+                    
+                    // Simple estimation of yield (not accurate for all cases)
+                    // In a real implementation, you would use a numerical method like Newton-Raphson
+                    yieldToMaturity = estimateYield(faceValue, couponRate, cleanPrice, timeToMaturity, couponFrequency);
+                }
+                
+                // Calculate accrued interest
+                let accruedInterest = 0;
+                if (bondType !== 'zero-coupon' && couponRate > 0) {
+                    // Simple accrued interest calculation (not accurate for all day count conventions)
+                    const timeSinceLastCoupon = 0.25; // Assume 25% of coupon period
+                    accruedInterest = faceValue * couponRate * timeSinceLastCoupon;
+                }
+                
+                // Calculate dirty price
+                const dirtyPrice = cleanPrice + accruedInterest;
+                
+                // Calculate duration
+                const modifiedDuration = calculateBondDuration(faceValue, couponRate, yieldToMaturity, timeToMaturity, couponFrequency);
+                
+                // Calculate convexity
+                const convexity = calculateBondConvexity(faceValue, couponRate, yieldToMaturity, timeToMaturity, couponFrequency);
+                
+                // Calculate DV01 (Dollar Value of 01)
+                const dv01 = (modifiedDuration * cleanPrice) / 10000; // Value of 1bp change
+                
+                // Calculate PV01
+                const pv01 = dv01 * (faceValue / 100);
+                
+                // Calculate other metrics
+                const macaulayDuration = modifiedDuration * (1 + yieldToMaturity / couponFrequency);
+                const yieldValueOf1bpPrice = 0.0001 / modifiedDuration;
+                const yieldValueOf1Dollar = 0.01 / (modifiedDuration * cleanPrice);
+                
+                // Generate cashflows
+                const cashflows = generateCashflows(
+                    faceValue, couponRate, yieldToMaturity, timeToMaturity, couponFrequency, issueDate
+                );
+                
+                // Generate yield curve data
+                const yieldCurve = generateYieldCurve(
+                    faceValue, couponRate, timeToMaturity, couponFrequency, yieldToMaturity
+                );
+                
+                // Create results data object
+                const resultData = {
+                    cleanPrice,
+                    dirtyPrice,
+                    accruedInterest,
+                    yieldToMaturity,
+                    macaulayDuration,
+                    modifiedDuration,
+                    convexity,
+                    dv01,
+                    pv01,
+                    intrinsicValue: faceValue,
+                    timeValue: cleanPrice - faceValue,
+                    yieldValueOf1bpPrice,
+                    yieldValueOf1Dollar,
+                    cashflows,
+                    yieldCurve
+                };
+                
+                // Display results
+                displayResults(resultData);
+                
+                // Show success message
+                showSuccess('Bond calculation completed successfully.');
+                
+            } catch (error) {
+                debug('Calculation error:', error);
+                showError('An error occurred during calculation: ' + error.message);
+                showDebugInfo('Calculation error: ' + error.message + '\n' + error.stack);
+            }
+        }
+        
+        // Simple yield estimation
+        function estimateYield(faceValue, couponRate, price, timeToMaturity, couponFrequency, tolerance = 0.0001) {
+            // Initial guess (coupon rate is often close)
+            let yLow = 0.0001; // 0.01%
+            let yHigh = 0.5;   // 50%
+            
+            // Binary search for approximate yield
+            for (let i = 0; i < 50; i++) {
+                const yMid = (yLow + yHigh) / 2;
+                const priceMid = calculateBondPrice(faceValue, couponRate, yMid, timeToMaturity, couponFrequency);
+                
+                if (Math.abs(priceMid - price) < tolerance) {
+                    return yMid;
+                }
+                
+                if (priceMid > price) {
+                    yLow = yMid;
+                } else {
+                    yHigh = yMid;
+                }
+            }
+            
+            return (yLow + yHigh) / 2;
+        }
+        
+        // Display calculation results
+        function displayResults(data) {
+            // Hide loader
+            document.getElementById('loader').style.display = 'none';
+            
+            // Display main results
+            const resultsTableBody = document.getElementById('resultsTableBody');
+            resultsTableBody.innerHTML = '';
+            
+            // Add clean price
+            addResultRow(resultsTableBody, 'Clean Price', formatCurrency(data.cleanPrice), 'Market price without accrued interest');
+            
+            // Add dirty price
+            addResultRow(resultsTableBody, 'Dirty Price', formatCurrency(data.dirtyPrice), 'Clean price plus accrued interest');
+            
+            // Add accrued interest
+            addResultRow(resultsTableBody, 'Accrued Interest', formatCurrency(data.accruedInterest), 'Interest accrued since last payment');
+            
+            // Add yield to maturity
+            addResultRow(resultsTableBody, 'Yield to Maturity', (data.yieldToMaturity * 100).toFixed(4) + '%', 'Annual rate of return if held to maturity');
+            
+            // Add modified duration
+            addResultRow(resultsTableBody, 'Modified Duration', data.modifiedDuration.toFixed(4) + ' years', 'Sensitivity of price to yield changes');
+            
+            // Add convexity
+            addResultRow(resultsTableBody, 'Convexity', data.convexity.toFixed(6), 'Second derivative of price with respect to yield');
+            
+            // Add intrinsic and time values
+            addResultRow(resultsTableBody, 'Intrinsic Value', formatCurrency(data.intrinsicValue), 'Value from redemption and coupons');
+            addResultRow(resultsTableBody, 'Time Value', formatCurrency(data.timeValue), 'Value derived from time to maturity');
+            
+            // Display cashflows
+            displayCashflows(data);
+            
+            // Display sensitivities
+            displaySensitivities(data);
+            
+            // Create chart
+            createHTMLChart(data, 'yieldChartContainer');
+            
+            // Show results section
+            document.getElementById('resultsSection').style.display = 'block';
+        }
+        
+        // Display cashflows
+        function displayCashflows(data) {
+            const cashflowsBody = document.getElementById('cashflowsBody');
+            cashflowsBody.innerHTML = '';
+            
+            if (data.cashflows && data.cashflows.length > 0) {
+                data.cashflows.forEach(cf => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${formatDate(cf.date)}</td>
+                        <td>${cf.type}</td>
+                        <td>${formatCurrency(cf.amount)}</td>
+                        <td>${formatCurrency(cf.presentValue)}</td>
+                    `;
+                    cashflowsBody.appendChild(row);
+                });
+            }
+        }
+        
+        // Display sensitivities
+        function displaySensitivities(data) {
+            const sensitivitiesBody = document.getElementById('sensitivitiesBody');
+            sensitivitiesBody.innerHTML = '';
+            
+            // Add DV01
+            addResultRow(sensitivitiesBody, 'DV01', formatCurrency(data.dv01), 'Dollar value of 1 basis point yield change');
+            
+            // Add PV01
+            addResultRow(sensitivitiesBody, 'PV01', formatCurrency(data.pv01), 'Present value of 1 basis point yield change');
+            
+            // Add yield value metrics
+            addResultRow(sensitivitiesBody, 'Yield Value of 1bp Price', (data.yieldValueOf1bpPrice * 10000).toFixed(4) + ' bps', 'Yield change for 1bp price change');
+            addResultRow(sensitivitiesBody, 'Yield Value of $1', (data.yieldValueOf1Dollar * 10000).toFixed(4) + ' bps', 'Yield change for $1 price change');
+            
+            // Add Macaulay duration
+            addResultRow(sensitivitiesBody, 'Macaulay Duration', data.macaulayDuration.toFixed(4) + ' years', 'Weighted average time of cash flows');
+        }
+        
+        // Reset form
+        function resetForm() {
+            // Reset to default values
+            const today = new Date();
+            
+            // Reset all form fields
+            setFormValue('bondType', 'fixed-rate');
+            setFormValue('calculationType', 'price');
+            setFormValue('faceValue', 100);
+            setFormValue('couponRate', 5.0);
+            
+            // Reset dates
+            try {
+                const issueDate = new Date(today);
+                issueDate.setFullYear(today.getFullYear() - 5);
+                setFormValue('issueDate', issueDate.toISOString().split('T')[0]);
+                
+                const maturityDate = new Date(today);
+                maturityDate.setFullYear(today.getFullYear() + 5);
+                setFormValue('maturityDate', maturityDate.toISOString().split('T')[0]);
+            } catch (e) {
+                debug('Error setting dates:', e);
+                showDebugInfo('Error setting default dates: ' + e.message);
+            }
+            
+            setFormValue('marketPrice', 100.0);
+            setFormValue('yieldRate', 5.0);
+            setFormValue('couponFrequency', 2);
+            setFormValue('dayCount', '30/360');
+            setFormValue('businessDayConvention', 'modified-following');
+            setFormValue('settlement', 2);
+            
+            // Re-enable fields
+            const couponRateInput = getElement('couponRate');
+            if (couponRateInput) {
+                couponRateInput.disabled = false;
+            }
+            
+            const couponFrequencySelect = getElement('couponFrequency');
+            if (couponFrequencySelect) {
+                couponFrequencySelect.disabled = false;
+            }
+            
+            // Hide results and messages
+            getElement('resultsSection').style.display = 'none';
+            getElement('errorMessage').style.display = 'none';
+            getElement('successMessage').style.display = 'none';
+            getElement('debugInfo').style.display = 'none';
+            clearDebugInfo();
+        }
+        
+        /**
+         * Initialize application
+         */
+        function initializeApp() {
+            debug('Initializing application...');
+            
+            // Set default dates
+            const today = new Date();
+            try {
+                // Get issue date input
+                const issueDate = getElement('issueDate');
+                if (issueDate) {
+                    const defaultIssueDate = new Date(today);
+                    defaultIssueDate.setFullYear(today.getFullYear() - 5);
+                    const dateStr = defaultIssueDate.toISOString().split('T')[0];
+                    issueDate.value = dateStr;
+                    debug('Set issue date:', dateStr);
+                }
+                
+                // Get maturity date input
+                const maturityDate = getElement('maturityDate');
+                if (maturityDate) {
+                    const defaultMaturityDate = new Date(today);
+                    defaultMaturityDate.setFullYear(today.getFullYear() + 5);
+                    const dateStr = defaultMaturityDate.toISOString().split('T')[0];
+                    maturityDate.value = dateStr;
+                    debug('Set maturity date:', dateStr);
+                }
+            } catch (e) {
+                debug('Error setting default dates:', e);
+                showDebugInfo('Error setting default dates: ' + e.message);
+            }
+            
+            // Setup tab navigation
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    // Find parent tab container
+                    const tabContainer = this.closest('.tab-container');
+                    
+                    if (tabContainer) {
+                        // Remove active class from all buttons and content in this container
+                        tabContainer.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                        tabContainer.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                        
+                        // Add active class to selected button and content
+                        this.classList.add('active');
+                        const tabId = this.getAttribute('data-tab');
+                        const tabContent = getElement(tabId);
+                        if (tabContent) {
+                            tabContent.classList.add('active');
+                        }
+                    }
+                });
+            });
+            
+            // Setup bond type change handler
+            const bondTypeSelect = getElement('bondType');
+            if (bondTypeSelect) {
+                bondTypeSelect.addEventListener('change', function() {
+                    const bondType = this.value;
+                    const couponRateInput = getElement('couponRate');
+                    const couponFrequencySelect = getElement('couponFrequency');
+                    
+                    if (bondType === 'zero-coupon') {
+                        if (couponRateInput) {
+                            couponRateInput.value = 0;
+                            couponRateInput.disabled = true;
+                        }
+                        
+                        if (couponFrequencySelect) {
+                            couponFrequencySelect.disabled = true;
+                        }
+                    } else {
+                        if (couponRateInput) {
+                            couponRateInput.disabled = false;
+                            if (bondType === 'fixed-rate') {
+                                couponRateInput.value = 5.0;
+                            }
+                        }
+                        
+                        if (couponFrequencySelect) {
+                            couponFrequencySelect.disabled = false;
+                        }
+                    }
+                });
+            }
+            
+            // Setup calculate button
+            const calculateButton = getElement('calculateButton');
+            if (calculateButton) {
+                calculateButton.addEventListener('click', calculateBond);
+            }
+            
+            // Setup reset button
+            const resetButton = getElement('resetButton');
+            if (resetButton) {
+                resetButton.addEventListener('click', resetForm);
+            }
+            
+            debug('Application initialization complete');
+        }
+        
+        // Run initialization when DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!-- File: html/exotic-options.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exotic Option Calculator | Quant Boost</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="container mt-4">
+    <h1>Exotic Option Calculator</h1>
+    <p class="lead">Calculate prices and sensitivities for exotic options using QuantLib.</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form id="exotic-option-form">
+                        <div class="mb-3">
+                            <label for="option-type" class="form-label">Option Type</label>
+                            <select class="form-select" id="option-type">
+                                <option value="barrier">Barrier Option</option>
+                                <option value="asian">Asian Option</option>
+                                <option value="lookback">Lookback Option</option>
+                                <option value="digital">Digital (Binary) Option</option>
+                                <option value="compound">Compound Option</option>
+                            </select>
+                        </div>
+
+                        <!-- Common parameters section -->
+                        <div class="mb-3">
+                            <label for="spot-price" class="form-label">Spot Price</label>
+                            <input type="number" class="form-control" id="spot-price" value="100" step="0.01" min="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="strike-price" class="form-label">Strike Price</label>
+                            <input type="number" class="form-control" id="strike-price" value="100" step="0.01" min="0.01" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="risk-free-rate" class="form-label">Risk-Free Rate (%)</label>
+                            <input type="number" class="form-control" id="risk-free-rate" value="2.5" step="0.01" min="0" max="20" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dividend-yield" class="form-label">Dividend Yield (%)</label>
+                            <input type="number" class="form-control" id="dividend-yield" value="1.0" step="0.01" min="0" max="20" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="volatility" class="form-label">Volatility (%)</label>
+                            <input type="number" class="form-control" id="volatility" value="20.0" step="0.01" min="0.1" max="100" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="time-to-maturity" class="form-label">Time to Maturity (years)</label>
+                            <input type="number" class="form-control" id="time-to-maturity" value="1.0" step="0.01" min="0.01" max="30" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="option-style" class="form-label">Option Style</label>
+                            <select class="form-select" id="option-style">
+                                <option value="call">Call</option>
+                                <option value="put">Put</option>
+                            </select>
+                        </div>
+
+                        <!-- Barrier option specific parameters -->
+                        <div id="barrier-params" class="option-params">
+                            <div class="mb-3">
+                                <label for="barrier-type" class="form-label">Barrier Type</label>
+                                <select class="form-select" id="barrier-type">
+                                    <option value="up-out">Up and Out</option>
+                                    <option value="up-in">Up and In</option>
+                                    <option value="down-out">Down and Out</option>
+                                    <option value="down-in">Down and In</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="barrier-level" class="form-label">Barrier Level</label>
+                                <input type="number" class="form-control" id="barrier-level" value="120" step="0.01" min="0.01" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="rebate" class="form-label">Rebate</label>
+                                <input type="number" class="form-control" id="rebate" value="0" step="0.01" min="0">
+                            </div>
+                        </div>
+
+                        <!-- Asian option specific parameters -->
+                        <div id="asian-params" class="option-params" style="display:none;">
+                            <div class="mb-3">
+                                <label for="averaging-type" class="form-label">Averaging Type</label>
+                                <select class="form-select" id="averaging-type">
+                                    <option value="arithmetic">Arithmetic Average</option>
+                                    <option value="geometric">Geometric Average</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="num-observations" class="form-label">Number of Observations</label>
+                                <input type="number" class="form-control" id="num-observations" value="12" step="1" min="1" max="100" required>
+                            </div>
+                        </div>
+
+                        <!-- Lookback option specific parameters -->
+                        <div id="lookback-params" class="option-params" style="display:none;">
+                            <div class="mb-3">
+                                <label for="lookback-type" class="form-label">Lookback Type</label>
+                                <select class="form-select" id="lookback-type">
+                                    <option value="floating-strike">Floating Strike</option>
+                                    <option value="fixed-strike">Fixed Strike</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Digital option specific parameters -->
+                        <div id="digital-params" class="option-params" style="display:none;">
+                            <div class="mb-3">
+                                <label for="cash-payoff" class="form-label">Cash Payoff</label>
+                                <input type="number" class="form-control" id="cash-payoff" value="1.0" step="0.01" min="0.01" required>
+                            </div>
+                        </div>
+
+                        <!-- Compound option specific parameters -->
+                        <div id="compound-params" class="option-params" style="display:none;">
+                            <div class="mb-3">
+                                <label for="mother-expiry" class="form-label">Mother Option Expiry (years)</label>
+                                <input type="number" class="form-control" id="mother-expiry" value="0.5" step="0.01" min="0.01" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="daughter-style" class="form-label">Daughter Option Style</label>
+                                <select class="form-select" id="daughter-style">
+                                    <option value="call">Call</option>
+                                    <option value="put">Put</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Pricing method -->
+                        <div class="mb-3">
+                            <label for="pricing-method" class="form-label">Pricing Method</label>
+                            <select class="form-select" id="pricing-method">
+                                <option value="analytic">Analytic (Closed Form)</option>
+                                <option value="monte-carlo">Monte Carlo Simulation</option>
+                                <option value="finite-difference">Finite Difference</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="calculate-btn">Calculate</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Results</h5>
+                </div>
+                <div class="card-body">
+                    <div id="results" style="display: none;">
+                        <div class="alert alert-info">
+                            <h5>Pricing Results</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p>Option Price: <span id="option-price">0.00</span></p>
+                                    <p>Black-Scholes Price: <span id="bs-price">0.00</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>Intrinsic Value: <span id="intrinsic-value">0.00</span></p>
+                                    <p>Time Value: <span id="time-value">0.00</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5>Greeks</h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p>Delta: <span id="delta">0.00</span></p>
+                                    <p>Gamma: <span id="gamma">0.00</span></p>
+                                    <p>Vega: <span id="vega">0.00</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>Theta: <span id="theta">0.00</span></p>
+                                    <p>Rho: <span id="rho">0.00</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h5>Additional Information</h5>
+                            <div id="additional-info">
+                                <!-- Additional info will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <canvas id="payoff-chart" width="400" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Show/hide option type specific parameters
+        document.getElementById('option-type').addEventListener('change', function() {
+            // Hide all option parameter sections
+            document.querySelectorAll('.option-params').forEach(function(el) {
+                el.style.display = 'none';
+            });
+
+            // Show the relevant section
+            const optionType = this.value;
+            if (optionType === 'barrier') {
+                document.getElementById('barrier-params').style.display = 'block';
+            } else if (optionType === 'asian') {
+                document.getElementById('asian-params').style.display = 'block';
+            } else if (optionType === 'lookback') {
+                document.getElementById('lookback-params').style.display = 'block';
+            } else if (optionType === 'digital') {
+                document.getElementById('digital-params').style.display = 'block';
+            } else if (optionType === 'compound') {
+                document.getElementById('compound-params').style.display = 'block';
+            }
+        });
+
+        // Initialize empty chart
+        let payoffChart = null;
+
+        document.getElementById('exotic-option-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            calculateOption();
+        });
+
+        function calculateOption() {
+            // Get common parameters
+            const optionType = document.getElementById('option-type').value;
+            const spotPrice = parseFloat(document.getElementById('spot-price').value);
+            const strikePrice = parseFloat(document.getElementById('strike-price').value);
+            const riskFreeRate = parseFloat(document.getElementById('risk-free-rate').value) / 100.0;
+            const dividendYield = parseFloat(document.getElementById('dividend-yield').value) / 100.0;
+            const volatility = parseFloat(document.getElementById('volatility').value) / 100.0;
+            const timeToMaturity = parseFloat(document.getElementById('time-to-maturity').value);
+            const optionStyle = document.getElementById('option-style').value;
+            const pricingMethod = document.getElementById('pricing-method').value;
+
+            // Prepare request data
+            const requestData = {
+                optionType: optionType,
+                spotPrice: spotPrice,
+                strikePrice: strikePrice,
+                riskFreeRate: riskFreeRate * 100,  // Send as percentage
+                dividendYield: dividendYield * 100,
+                volatility: volatility * 100,
+                timeToMaturity: timeToMaturity,
+                optionStyle: optionStyle,
+                pricingMethod: pricingMethod
+            };
+
+            // Add option-specific parameters
+            switch (optionType) {
+                case 'barrier':
+                    requestData.barrierType = document.getElementById('barrier-type').value;
+                    requestData.barrierLevel = parseFloat(document.getElementById('barrier-level').value);
+                    requestData.rebate = parseFloat(document.getElementById('rebate').value);
+                    break;
+
+                case 'asian':
+                    requestData.averagingType = document.getElementById('averaging-type').value;
+                    requestData.numObservations = parseInt(document.getElementById('num-observations').value);
+                    break;
+
+                case 'lookback':
+                    requestData.lookbackType = document.getElementById('lookback-type').value;
+                    break;
+
+                case 'digital':
+                    requestData.cashPayoff = parseFloat(document.getElementById('cash-payoff').value);
+                    break;
+
+                case 'compound':
+                    requestData.motherExpiry = parseFloat(document.getElementById('mother-expiry').value);
+                    requestData.daughterStyle = document.getElementById('daughter-style').value;
+                    break;
+            }
+
+            // Call API to calculate option
+            fetch('/api/exotics/calculate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    displayResults(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while calculating. Please try again.');
+                });
+        }
+
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('results').style.display = 'block';
+
+            // Update price information
+            document.getElementById('option-price').textContent = formatCurrency(data.optionPrice);
+            document.getElementById('bs-price').textContent = formatCurrency(data.blackScholesPrice);
+            document.getElementById('intrinsic-value').textContent = formatCurrency(data.intrinsicValue);
+            document.getElementById('time-value').textContent = formatCurrency(data.timeValue);
+
+            // Update Greeks
+            document.getElementById('delta').textContent = data.greeks.delta.toFixed(6);
+            document.getElementById('gamma').textContent = data.greeks.gamma.toFixed(6);
+            document.getElementById('vega').textContent = data.greeks.vega.toFixed(6);
+            document.getElementById('theta').textContent = data.greeks.theta.toFixed(6);
+            document.getElementById('rho').textContent = data.greeks.rho.toFixed(6);
+
+            // Additional information based on option type
+            const additionalInfo = document.getElementById('additional-info');
+            additionalInfo.innerHTML = '';
+
+            const optionType = document.getElementById('option-type').value;
+
+            if (optionType === 'barrier') {
+                const hitProbability = data.additionalInfo.hitProbability * 100;
+                additionalInfo.innerHTML = `
+                        <p>Probability of Hitting Barrier: ${hitProbability.toFixed(2)}%</p>
+                        <p>Expected Rebate: ${formatCurrency(data.additionalInfo.expectedRebate)}</p>
+                    `;
+            } else if (optionType === 'asian') {
+                additionalInfo.innerHTML = `
+                        <p>Average Price: ${formatCurrency(data.additionalInfo.averagePrice)}</p>
+                        <p>Average Price Volatility: ${(data.additionalInfo.averageVolatility * 100).toFixed(2)}%</p>
+                    `;
+            } else if (optionType === 'lookback') {
+                additionalInfo.innerHTML = `
+                        <p>Expected Minimum: ${formatCurrency(data.additionalInfo.expectedMinimum)}</p>
+                        <p>Expected Maximum: ${formatCurrency(data.additionalInfo.expectedMaximum)}</p>
+                    `;
+            } else if (optionType === 'digital') {
+                additionalInfo.innerHTML = `
+                        <p>Probability of Exercise: ${(data.additionalInfo.exerciseProbability * 100).toFixed(2)}%</p>
+                    `;
+            } else if (optionType === 'compound') {
+                additionalInfo.innerHTML = `
+                        <p>Mother Option: ${formatCurrency(data.additionalInfo.motherOptionValue)}</p>
+                        <p>Daughter Option Expected: ${formatCurrency(data.additionalInfo.daughterOptionExpectedValue)}</p>
+                    `;
+            }
+
+            // Update payoff chart
+            if (payoffChart) {
+                payoffChart.destroy();
+            }
+
+            const ctx = document.getElementById('payoff-chart').getContext('2d');
+
+            // Create arrays for chart data
+            const spotPrices = data.payoffChart.spotPrices;
+            const payoffs = data.payoffChart.payoffs;
+            const currentValues = data.payoffChart.currentValues;
+            const vanillaPayoffs = data.payoffChart.vanillaPayoffs;
+
+            payoffChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: spotPrices.map(p => formatCurrency(p)),
+                    datasets: [{
+                        label: 'Exotic Option Payoff',
+                        data: payoffs,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderWidth: 2,
+                        fill: false
+                    }, {
+                        label: 'Current Value',
+                        data: currentValues,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderWidth: 2,
+                        fill: false
+                    }, {
+                        label: 'Vanilla Option Payoff',
+                        data: vanillaPayoffs,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Option Payoff Profile'
+                        },
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Underlying Price'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Payoff Value'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(value);
+        }
+    });
+</script>
+</body>
+</html>
